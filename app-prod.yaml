@@ -1,0 +1,62 @@
+runtime: go113
+instance_class: F1
+automatic_scaling:
+  max_instances: 1
+  min_instances: 0
+  max_idle_instances: 1
+  min_idle_instances: 0
+  target_cpu_utilization: 0.95
+  target_throughput_utilization: 0.95
+  max_concurrent_requests: 80
+  max_pending_latency: 15s
+  min_pending_latency: 15s
+
+default_expiration: "7d"
+
+env_variables:
+  HOST: "https://www.slothninja.com"
+  DATASTORE_PROJECT_ID: "go-slothninja-games"
+  CLIENT_ID: "672111572490-cq4vgrlatrtds46ajako0qrjbf1nkq8n.apps.googleusercontent.com"
+  CLIENT_SECRET: "ybud7_DVPIWVTLZGPm7Yw-F5"
+  NODE_ENV: "production"
+  MJ_API_KEY_PUB: "0b66e3cf5d4b5a5c536ef1a289b58d79"
+  MJ_API_KEY_PRIV: "e4ba83076c32f4732e84a1b05cb4e3e5"
+          
+
+inbound_services:
+- warmup
+
+handlers:
+- url: /stylesheets
+  static_dir: public/stylesheets
+
+- url: /scripts
+  static_dir: public/scripts
+  
+- url: /javascripts
+  static_dir: public/javascripts
+
+- url: /js
+  static_dir: public/js
+
+- url: /images
+  static_dir: public/images
+  
+- url: /images/*
+  static_dir: public/images
+  
+- url: /rules
+  static_dir: public/rules
+
+- url: /favicon\.ico
+  static_files: public/images/favicon.ico
+  upload: public/images/favicon\.ico
+
+- url: /robots\.txt
+  static_files: public/robots.txt
+  upload: public/robots\.txt
+
+- url: /.*
+  secure: always
+  redirect_http_response_code: 301
+  script: auto

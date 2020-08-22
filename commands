@@ -1,0 +1,8 @@
+start backend
+----------------------------
+CLIENT_ID="435340145701-t5o50sjq7hsbilopgreobhvrv30e1tj4.apps.googleusercontent.com" CLIENT_SECRET="KfRzKXX8LyIcC7pPk9sYRlpM" PORT=8087 HOST=http://luser.slothninja.com:8087 DATASTORE_PROJECT_ID=user-slothninja-games DATASTORE_EMULATOR_HOST=luser.slothninja.com:8086 DEV=true gin -p 3007 -a 8087 -i -t ../ -d . run main.go
+
+
+start database
+------------------------------
+gcloud beta emulators datastore start --data-dir /Volumes/Janice/datastore/user/ --host-port luser.slothninja.com:8086
