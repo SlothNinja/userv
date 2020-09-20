@@ -9,8 +9,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"github.com/SlothNinja/log"
-	"github.com/SlothNinja/restful"
-	"github.com/SlothNinja/sn"
+	"github.com/SlothNinja/sn/v2"
 	ucon "github.com/SlothNinja/user-controller/v2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -19,13 +18,6 @@ import (
 )
 
 const (
-	NODE_ENV       = "NODE_ENV"
-	production     = "production"
-	userPrefix     = ""
-	gamesPrefix    = "games"
-	ratingPrefix   = "rating"
-	mailPrefix     = "mail"
-	rootPath       = "/"
 	hashKeyLength  = 64
 	blockKeyLength = 32
 	sessionName    = "sng-oauth"
@@ -50,14 +42,7 @@ func main() {
 
 	store := createCookieStore(s)
 	r := gin.Default()
-	renderer := restful.ParseTemplates("templates/", ".tmpl")
-	r.HTMLRender = renderer
-
-	r.Use(
-		sessions.Sessions(sessionName, store),
-		// restful.AddTemplates(renderer.Templates),
-		// user.GetCUserHandler(db),
-	)
+	r.Use(sessions.Sessions(sessionName, store))
 
 	// User Routes
 	r = ucon.NewClient(db).AddRoutes("", r)
@@ -75,15 +60,15 @@ func main() {
 	r.Run()
 }
 
-type Secrets struct {
+type secrets struct {
 	HashKey   []byte         `json:"hashKey"`
 	BlockKey  []byte         `json:"blockKey"`
 	UpdatedAt time.Time      `json:"updatedAt"`
 	Key       *datastore.Key `datastore:"__key__" json:"-"`
 }
 
-func getSecrets() (Secrets, error) {
-	s := Secrets{
+func getSecrets() (secrets, error) {
+	s := secrets{
 		Key: secretsKey(),
 	}
 
@@ -116,8 +101,8 @@ func secretsKey() *datastore.Key {
 	return datastore.NameKey("Secrets", "root", nil)
 }
 
-func genSecrets() (Secrets, error) {
-	s := Secrets{
+func genSecrets() (secrets, error) {
+	s := secrets{
 		HashKey:  securecookie.GenerateRandomKey(hashKeyLength),
 		BlockKey: securecookie.GenerateRandomKey(blockKeyLength),
 		Key:      secretsKey(),
@@ -134,16 +119,16 @@ func genSecrets() (Secrets, error) {
 	return s, nil
 }
 
-func (s *Secrets) Load(ps []datastore.Property) error {
+func (s *secrets) Load(ps []datastore.Property) error {
 	return datastore.LoadStruct(s, ps)
 }
 
-func (s *Secrets) Save() ([]datastore.Property, error) {
+func (s *secrets) Save() ([]datastore.Property, error) {
 	s.UpdatedAt = time.Now()
 	return datastore.SaveStruct(s)
 }
 
-func (s *Secrets) LoadKey(k *datastore.Key) error {
+func (s *secrets) LoadKey(k *datastore.Key) error {
 	s.Key = k
 	return nil
 }
@@ -163,7 +148,7 @@ func staticRoutes(r *gin.Engine) *gin.Engine {
 	return r
 }
 
-func createCookieStore(s Secrets) cookie.Store {
+func createCookieStore(s secrets) cookie.Store {
 	if !sn.IsProduction() {
 		log.Debugf("hashKey: %s\nblockKey: %s",
 			base64.StdEncoding.EncodeToString(s.HashKey),
@@ -178,7 +163,7 @@ func createCookieStore(s Secrets) cookie.Store {
 	return store
 }
 
-func cookieHandler(s Secrets) gin.HandlerFunc {
+func cookieHandler(s secrets) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, s)
 	}
