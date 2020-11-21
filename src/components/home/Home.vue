@@ -23,7 +23,7 @@
 
               <v-col cols='6'>
                 <div class='title font-weight-black text-center'>Welcome to SlothNinja Games</div>
-                <div class='subtitle-1 font-weight-bold text-center'>User Service Subdomain</div>
+                <div class='subtitle-1 font-weight-bold text-center'>Users Service Subdomain</div>
                 <div class='body-1 pb-2'>
                   SlothNinja Games is a play-by-web (PBW) site that permits registered members to play board
                   and card games with other members in a turn-based manner. The site provides a graphical

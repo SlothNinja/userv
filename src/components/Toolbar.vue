@@ -58,10 +58,12 @@
     props: [ 'value' ],
     computed: {
       loginPath: function () {
+        let path = window.location.href
+        console.log(`path: ${path}`)
         if (process.env.NODE_ENV == 'development') {
-          return `http://luser.slothninja.com:${process.env.VUE_APP_PORT}/login/?redirect=${window.btoa(window.location.href)}`
+          return `http://luser.slothninja.com:${process.env.VUE_APP_PORT}/login/?redirect=${window.btoa(path)}`
         }
-        return `/login/?redirect=${window.btoa(window.location.href)}`
+        return `/login/?redirect=${window.btoa(path)}`
       }
     }
   }

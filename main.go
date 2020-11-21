@@ -10,7 +10,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/SlothNinja/log"
 	"github.com/SlothNinja/sn/v2"
-	ucon "github.com/SlothNinja/user-controller/v2"
+	ucon "github.com/SlothNinja/user-controller"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -45,7 +45,7 @@ func main() {
 	r.Use(sessions.Sessions(sessionName, store))
 
 	// User Routes
-	r = ucon.NewClient(db).AddRoutes("", r)
+	r = ucon.NewClient(db).AddRoutes(r)
 
 	// cookie route
 	r.GET("cookie", cookieHandler(s))
