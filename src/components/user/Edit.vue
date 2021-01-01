@@ -25,8 +25,7 @@
               <template v-else>
                 <v-card-title primary-title>
                   <div class="font-weight-bold title">
-                    <sn-user-btn size="medium" :user="u" ></sn-user-btn>
-                    {{u.name}}
+                    <sn-user-btn size="medium" :user="u" > {{u.name}} </sn-user-btn>
                   </div>
                 </v-card-title>
                 <v-card-text>

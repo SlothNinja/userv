@@ -9,12 +9,13 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"github.com/SlothNinja/log"
-	"github.com/SlothNinja/sn/v2"
-	ucon "github.com/SlothNinja/user-controller/v2"
+	"github.com/SlothNinja/sn"
+	ucon "github.com/SlothNinja/user-controller"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/securecookie"
+	"github.com/patrickmn/go-cache"
 )
 
 const (
@@ -29,6 +30,8 @@ func main() {
 	} else {
 		gin.SetMode(gin.DebugMode)
 	}
+
+	mcache := cache.New(30*time.Minute, 10*time.Minute)
 
 	db, err := datastore.NewClient(context.Background(), "")
 	if err != nil {
@@ -45,7 +48,7 @@ func main() {
 	r.Use(sessions.Sessions(sessionName, store))
 
 	// User Routes
-	r = ucon.NewClient(db).AddRoutes("", r)
+	r = ucon.NewClient(db, mcache).AddRoutes(r)
 
 	// cookie route
 	r.GET("cookie", cookieHandler(s))
@@ -156,10 +159,15 @@ func createCookieStore(s secrets) cookie.Store {
 		)
 	}
 	store := cookie.NewStore(s.HashKey, s.BlockKey)
-	store.Options(sessions.Options{
+	opts := sessions.Options{
 		Domain: "slothninja.com",
 		Path:   "/",
-	})
+	}
+	if sn.IsProduction() {
+		opts.Secure = true
+		opts.HttpOnly = true
+	}
+	store.Options(opts)
 	return store
 }
 

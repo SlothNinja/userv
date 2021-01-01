@@ -1,17 +1,20 @@
 <template>
-  <v-btn 
-    fab
-    :x-small="size ? size === 'x-small' : true"
-    :small="size ? size === 'small' : true"
-    :medium="size ? size === 'medium' : true"
-    :large="size ? size === 'large' : true"
-    :color="color || 'black' "
-    :to="{ name: 'show', params: { id: user.id }}"
-  >
-    <v-avatar :size="avatarSize" >
-      <img :src="gravatar(user.emailHash, size, user.gravType)" />
-    </v-avatar>
-  </v-btn>
+  <div>
+    <v-btn 
+      fab
+      :x-small="size ? size === 'x-small' : true"
+      :small="size ? size === 'small' : true"
+      :medium="size ? size === 'medium' : true"
+      :large="size ? size === 'large' : true"
+      :color="color || 'black' "
+      :to="{ name: 'show', params: { id: user.id }}"
+    >
+      <v-avatar :size="avatarSize" >
+	<img :src="gravatar(user.emailHash, size, user.gravType)" />
+      </v-avatar>
+    </v-btn>
+    <slot></slot>
+  </div>
 </template>
 
 <script>
@@ -34,15 +37,6 @@
           default:
             return '54px'
         }
-      },
-      showlink: function () {
-        var self = this
-        return `show/${self.user.id}`
-        // if (process.env.NODE_ENV == 'development') {
-        //   return `http://lwww.slothninja.com:8083/user/show/${self.user.id}`
-        // } else {
-        //   return `https://www.slothninja.com/user/show/${self.user.id}`
-        // }
       }
     }
   }

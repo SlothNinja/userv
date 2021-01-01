@@ -13,8 +13,7 @@
 
     <div style='height:3em' v-else>
       <div v-if='cu' class='font-weight-bold title'>
-        <sn-user-btn size='small' :user='cu' ></sn-user-btn>
-        {{cu.name}}
+        <sn-user-btn size='small' :user='cu' > {{cu.name}} </sn-user-btn>
       </div>
       <div v-else>
               <v-btn :href='loginPath' color='info'>Login</v-btn>
