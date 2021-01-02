@@ -165,7 +165,6 @@ func createCookieStore(s secrets) cookie.Store {
 	}
 	if sn.IsProduction() {
 		opts.Secure = true
-		opts.HttpOnly = true
 	}
 	store.Options(opts)
 	return store
