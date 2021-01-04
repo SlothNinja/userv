@@ -37,33 +37,35 @@
                     readonly
                   >
                   </v-text-field>
-                  <v-text-field
-                    name="email"
-                    label="Email"
-                    v-model="u.email"
-                    id="email"
-                    readonly
-                  >
-                  </v-text-field>
-                  <v-layout row>
-                    <v-flex>
-                      <v-checkbox
-                        v-model="u.emailReminders"
-                        label="Email Reminders"
-                        readonly
-                        color="green"
-                      ></v-checkbox>
-                    </v-flex>
-                    <v-flex>
-                      <v-checkbox
-                        v-model="u.emailNotifications"
-                        label="Email Notifications"
-                        color="green"
-                        readonly
-                      ></v-checkbox>
-                    </v-flex>
-                  </v-layout>
-                  <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
+                  <template v-if="currentUser">
+                    <v-text-field
+                      name="email"
+                      label="Email"
+                      v-model="u.email"
+                      id="email"
+                      readonly
+                    >
+                    </v-text-field>
+                    <v-layout row>
+                      <v-flex>
+                        <v-checkbox
+                          v-model="u.emailReminders"
+                          label="Email Reminders"
+                          readonly
+                          color="green"
+                        ></v-checkbox>
+                      </v-flex>
+                      <v-flex>
+                        <v-checkbox
+                          v-model="u.emailNotifications"
+                          label="Email Notifications"
+                          color="green"
+                          readonly
+                        ></v-checkbox>
+                      </v-flex>
+                    </v-layout>
+                    <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
+                  </template>
                 </v-card-text>
               </template>
             </v-card>
@@ -110,11 +112,13 @@
   import Snackbar from '@/components/Snackbar'
   import Footer from '@/components/Footer'
   import UserButton from '@/components/user/Button'
+  import CurrentUser from '@/components/mixins/CurrentUser'
 
   const axios = require('axios')
   const _ = require('lodash')
 
   export default {
+    mixins: [ CurrentUser ],
     data () {
       return {
         u: { name: '', emailReminders: 'true', emailNotifications: 'true', gravType: 'monsterid' },
@@ -139,6 +143,9 @@
         set: function (value) {
           this.$root.snackbar = value
         }
+      },
+      currentUser () {
+        return this.cu.id == this.u.id
       }
     },
     created () {

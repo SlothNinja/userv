@@ -35,51 +35,53 @@
                       v-model="u.name"
                       id="user-name"
                     ></v-text-field>
-                    <v-text-field
-                      name="user-email"
-                      label="Email"
-                      v-model="u.email"
-                      id="user-email"
-                      disabled
-                    ></v-text-field>
-                    <v-layout row>
-                      <v-flex>
-                        <v-checkbox
-                          v-model="u.emailReminders"
-                          label="Email Reminders"
-                          disabled
-                          color="green"
-                        ></v-checkbox>
-                      </v-flex>
-                      <v-flex>
-                        <v-checkbox
-                          v-model="u.emailNotifications"
-                          label="Email Notifications"
-                          color="green"
-                        ></v-checkbox>
-                      </v-flex>
-                    </v-layout>
-                    <v-radio-group v-model="u.gravType" row label='Gravatar'>
+                    <template v-if="currentUser">
+                      <v-text-field
+                        name="user-email"
+                        label="Email"
+                        v-model="u.email"
+                        id="user-email"
+                        disabled
+                      ></v-text-field>
                       <v-layout row>
-                        <v-flex v-for="t in gravTypes()" :key="t">
-                          <v-radio :value="t" color="green">
-                            <template slot='label'>
-                              <v-avatar size='48px' >
-                                <img :src="gravatar(u.emailHash, 48, t)" />
-                              </v-avatar>
-                            </template>
-                          </v-radio>
+                        <v-flex>
+                          <v-checkbox
+                            v-model="u.emailReminders"
+                            label="Email Reminders"
+                            disabled
+                            color="green"
+                          ></v-checkbox>
+                        </v-flex>
+                        <v-flex>
+                          <v-checkbox
+                            v-model="u.emailNotifications"
+                            label="Email Notifications"
+                            color="green"
+                          ></v-checkbox>
                         </v-flex>
                       </v-layout>
-                    </v-radio-group>
-                    <v-layout row>
-                      <v-flex>
-                        <v-btn @click="putData" color="green" dark>Update</v-btn>
-                      </v-flex>
-                      <v-flex class="text-xs-right">
-                        <v-btn :to="{name: 'show', params: { id: $route.params.id }}" color="green" dark>Cancel</v-btn>
-                      </v-flex>
-                    </v-layout>
+                      <v-radio-group v-model="u.gravType" row label='Gravatar'>
+                        <v-layout row>
+                          <v-flex v-for="t in gravTypes()" :key="t">
+                            <v-radio :value="t" color="green">
+                              <template slot='label'>
+                                <v-avatar size='48px' >
+                                  <img :src="gravatar(u.emailHash, 48, t)" />
+                                </v-avatar>
+                              </template>
+                            </v-radio>
+                          </v-flex>
+                        </v-layout>
+                      </v-radio-group>
+                      <v-layout row>
+                        <v-flex>
+                          <v-btn @click="putData" color="green" dark>Update</v-btn>
+                        </v-flex>
+                        <v-flex class="text-xs-right">
+                          <v-btn :to="{name: 'show', params: { id: $route.params.id }}" color="green" dark>Cancel</v-btn>
+                        </v-flex>
+                      </v-layout>
+                    </template>
                 </v-card-text>
               </template>
             </v-card>
@@ -158,6 +160,9 @@
         set: function (value) {
           this.$root.snackbar = value
         }
+      },
+      currentUser () {
+        return this.cu.id == this.u.id
       }
     },
     created () {

@@ -157,14 +157,19 @@ func createCookieStore(s secrets) cookie.Store {
 			base64.StdEncoding.EncodeToString(s.HashKey),
 			base64.StdEncoding.EncodeToString(s.BlockKey),
 		)
+		store := cookie.NewStore(s.HashKey, s.BlockKey)
+		opts := sessions.Options{
+			Domain: "fake-slothninja.com",
+			Path:   "/",
+		}
+		store.Options(opts)
+		return store
 	}
 	store := cookie.NewStore(s.HashKey, s.BlockKey)
 	opts := sessions.Options{
 		Domain: "slothninja.com",
 		Path:   "/",
-	}
-	if sn.IsProduction() {
-		opts.Secure = true
+		Secure: true,
 	}
 	store.Options(opts)
 	return store
