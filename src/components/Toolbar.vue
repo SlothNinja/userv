@@ -57,9 +57,6 @@
     props: [ 'value' ],
     computed: {
       loginPath: function () {
-        if (process.env.NODE_ENV == 'development') {
-          return `http://luser.slothninja.com:${process.env.VUE_APP_PORT}/login/?redirect=${window.btoa(window.location.href)}`
-        }
         return `/login/?redirect=${window.btoa(window.location.href)}`
       }
     }
