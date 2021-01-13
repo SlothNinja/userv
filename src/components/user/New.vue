@@ -172,7 +172,7 @@
             if (u) {
               self.u = u
             } else {
-              self.$router.push({ name: 'home'})
+              self.$router.push({ name: 'user-home'})
             }
             self.loading = false
           })
@@ -180,7 +180,7 @@
             self.loading = false
             self.snackbar.message = 'Server Error.  Try again.'
             self.snackbar.open = true
-            self.$router.push({ name: 'home'})
+            self.$router.push({ name: 'user-home'})
           })
       },
       putData () {
@@ -210,7 +210,7 @@
               self.snackbar.open = true
             }
             self.loading = false
-            self.$router.push({ name: 'home'})
+            self.$router.push({ name: 'user-home'})
           })
       }
     }

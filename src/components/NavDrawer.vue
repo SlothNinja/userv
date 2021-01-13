@@ -23,7 +23,7 @@
       dense
       nav
     >
-      <v-list-item :to="{ name: 'home' }" exact>
+      <v-list-item :to="{ name: 'sng-home' }" exact>
         <v-list-item-icon>
           <v-icon>mdi-home</v-icon>
         </v-list-item-icon>
@@ -83,8 +83,8 @@
         var self = this
         self.delete_cookie('sng-oauth')
         self.cu = null
-        if (self.$route.name != 'home') {
-          self.$router.push({ name: 'home'})
+        if (self.$route.name != 'user-home') {
+          self.$router.push({ name: 'user-home'})
         }
       },
       delete_cookie: function (name) {

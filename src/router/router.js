@@ -26,8 +26,18 @@ export default new Router({
     },
     {
       path: '/',
-      name: 'home',
+      name: 'user-home',
       component: Home
+    },
+    {
+      path: '/sng-home',
+      name: 'sng-home',
+      beforeEnter() {
+        // Put the full page URL including the protocol http(s) below
+        let sngHome = process.env.VUE_APP_SNG_HOME
+        console.log(`sngHome: ${sngHome}`)
+        window.location.href = sngHome
+      }
     }
   ]
 })

@@ -22,7 +22,7 @@
 
     <v-spacer></v-spacer>
 
-    <v-card class='mt-11' :to="{ name: 'home' }" color='white' height='100' width='220'>
+    <v-card class='mt-11' :to="{ name: 'sng-home' }" color='white' height='100' width='220'>
       <v-img height='100' contain :src="require('../assets/slothninja_logo_fullsize.png')" />
     </v-card>
 
