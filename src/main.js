@@ -25,6 +25,9 @@ new Vue({
       let self = this
       self.fetchCurrentUser()
   },
+  watch: {
+    '$route': 'fetchCurrentUser'
+  },
   methods: {
     fetchCurrentUser () {
       let self = this

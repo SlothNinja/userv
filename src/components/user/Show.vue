@@ -66,7 +66,7 @@
                     </v-layout>
                     <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
                   </template>
-                  <v-card v-if="cu.admin">
+                  <v-card v-if="isAdmin">
                     <v-btn @click="putData" color="green" dark>As ({{u.name}})</v-btn>
                   </v-card>
                 </v-card-text>
@@ -148,12 +148,23 @@
         }
       },
       currentUser () {
-        return this.cu.id == this.u.id
+        let cuid = _.get(this.cu, 'id', false)
+        let uid = _.get(this.u, 'id', false)
+        if (cuid) {
+          return cuid == uid
+        }
+        return false
+      },
+      isAdmin () {
+        return _.get(this.cu, 'admin', false)
       }
     },
     created () {
       let self = this
       self.fetchData()
+    },
+    watch: {
+      '$route': 'fetchData'
     },
     methods: {
       fetchData () {

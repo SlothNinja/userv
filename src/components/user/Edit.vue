@@ -169,6 +169,9 @@
       let self = this
       self.fetchData()
     },
+    watch: {
+      '$route': 'fetchData'
+    },
     methods: {
       fetchData () {
         let self = this

@@ -22,6 +22,7 @@ node_modules/
 dist/
 
 userv
-commands
 gin-bin
 app.yaml
+db
+backend
