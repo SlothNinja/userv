@@ -2,12 +2,12 @@ import Vue from 'vue'
 import App from './App.vue'
 import vuetify from './plugins/vuetify'
 import router from './router/router'
-import axios from 'axios'
 import { Plugin } from 'vue-fragment'
 
 Vue.use(Plugin)
 
 const _ = require('lodash')
+const axios = require('axios')
 
 Vue.config.productionTip = false
 
@@ -31,6 +31,10 @@ new Vue({
   methods: {
     fetchCurrentUser () {
       let self = this
+      console.log(`fetchCurrentUser cu: ${JSON.stringify(self.cu)}`)
+      if (self.cu != null) {
+        return
+      }
       axios.get('/current')
         .then(function (response) {
           let cu = _.get(response, 'data.cu', false)

@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"cloud.google.com/go/logging"
 	"github.com/SlothNinja/log"
 	"github.com/SlothNinja/sn"
 	ucon "github.com/SlothNinja/user-controller"
@@ -19,49 +21,61 @@ import (
 )
 
 const (
-	hashKeyLength  = 64
-	blockKeyLength = 32
-	sessionName    = "sng-oauth"
+	hashKeyLength        = 64
+	blockKeyLength       = 32
+	sessionName          = "sng-oauth"
+	GOOGLE_CLOUD_PROJECT = "GOOGLE_CLOUD_PROJECT"
 )
 
 func main() {
-	if sn.IsProduction() {
-		gin.SetMode(gin.ReleaseMode)
-	} else {
-		gin.SetMode(gin.DebugMode)
-	}
+	setGinMode()
 
-	mcache := cache.New(30*time.Minute, 10*time.Minute)
+	logClient := newLogClient()
+	defer logClient.Close()
 
-	db, err := datastore.NewClient(context.Background(), "")
-	if err != nil {
-		panic(fmt.Sprintf("unable to connect to database: %v", err.Error()))
-	}
+	logger := logClient.Logger("user-service")
+
+	client := sn.NewClient(newDSClient(), logger, cache.New(30*time.Minute, 10*time.Minute), gin.New())
 
 	s, err := getSecrets()
 	if err != nil {
 		panic(err.Error())
 	}
 
-	store := createCookieStore(s)
-	r := gin.Default()
-	r.Use(sessions.Sessions(sessionName, store))
+	client.Router.Use(
+		sessions.Sessions(sessionName, createCookieStore(s)),
+		gin.LoggerWithWriter(logger.StandardLogger(logging.Debug).Writer()),
+		gin.RecoveryWithWriter(logger.StandardLogger(logging.Critical).Writer()),
+	)
 
-	// User Routes
-	r = ucon.NewClient(db, mcache).AddRoutes(r)
+	// user controller
+	ucon.NewClient(client.DS, logger, client.Cache, client.Router)
 
 	// cookie route
-	r.GET("cookie", cookieHandler(s))
+	client.Router.GET("cookie", cookieHandler(s))
 
 	// warmup
-	r.GET("_ah/warmup", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
+	client.Router.GET("_ah/warmup", func(c *gin.Context) { c.Status(http.StatusOK) })
 
-	r = staticRoutes(r)
-
-	r.Run()
+	client.Router = staticRoutes(client.Router)
+	client.Router.Run()
 }
+
+// type client struct {
+// 	dsClient  *datastore.Client
+// 	logClient *log.Client
+// 	mcache    *cache.Cache
+// 	router    *gin.Engine
+// }
+//
+// func newClient() *client {
+// 	return &client{
+// 		dsClient:  newDSClient(),
+// 		logClient: newLogClient(),
+// 		mcache:    cache.New(30*time.Minute, 10*time.Minute),
+// 		router:    gin.Default(),
+// 	}
+// }
 
 type secrets struct {
 	HashKey   []byte         `json:"hashKey"`
@@ -179,4 +193,32 @@ func cookieHandler(s secrets) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, s)
 	}
+}
+
+func setGinMode() {
+	if sn.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+		return
+	}
+	gin.SetMode(gin.DebugMode)
+}
+
+func getProjectID() string {
+	return os.Getenv(GOOGLE_CLOUD_PROJECT)
+}
+
+func newDSClient() *datastore.Client {
+	client, err := datastore.NewClient(context.Background(), "")
+	if err != nil {
+		log.Panicf("unable to create datastore client: %w", err)
+	}
+	return client
+}
+
+func newLogClient() *log.Client {
+	client, err := log.NewClient(getProjectID())
+	if err != nil {
+		log.Panicf("unable to create logging client: %w", err)
+	}
+	return client
 }
