@@ -88,7 +88,7 @@
         }
       },
       delete_cookie: function (name) {
-        document.cookie = name + '= ; domain = .slothninja.com ; expires = Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie = `${name}= ; domain = ${process.env.VUE_APP_COOKIE_DOMAIN} ; expires = Thu, 01 Jan 1970 00:00:00 GMT`
       },
     },
     computed: {

@@ -67,7 +67,7 @@
                     <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
                   </template>
                   <v-card v-if="isAdmin">
-                    <v-btn @click="putData" color="green" dark>As ({{u.name}})</v-btn>
+                    <v-btn @click="asUser" color="green" dark>As ({{u.name}})</v-btn>
                   </v-card>
                 </v-card-text>
               </template>
@@ -187,7 +187,7 @@
             self.$router.push({ name: 'show', params: { id: self.$route.params.id}})
           })
       },
-      putData () {
+      asUser () {
         let self = this
         let path = `/as/${self.$route.params.id}`
         self.loading = true
@@ -199,7 +199,8 @@
               self.snackbar.open = true
             }
             self.loading = false
-            self.$router.push({ name: 'show', params: { id: self.$route.params.id}})
+            self.cu = null
+            self.$router.push({ name: 'user-home' })
           })
           .catch(function (response) {
             let msg = _.get(response, 'data.message', false)
