@@ -8,7 +8,8 @@
       </div>
     </sn-snackbar>
     <v-main>
-      <v-card height="37em">
+      <v-container fluid>
+      <v-card>
         <v-card-text>
           <v-container>
             <v-row>
@@ -48,8 +49,9 @@
           </v-container>
         </v-card-text>
       </v-card>
+      </v-container>
     </v-main>
-    <sn-footer app></sn-footer>
+    <sn-footer></sn-footer>
   </v-app>
 </template>
 

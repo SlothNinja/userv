@@ -4,6 +4,7 @@
     color='info'
     vertical
     v-model='open'
+    app
   >
     <slot></slot>
 
