@@ -34,6 +34,7 @@
                         label="Screen Name"
                         v-model="u.name"
                         id="user-name"
+                        readonly
                         ></v-text-field>
                     </v-row>
                     <template v-if="currentUser">
@@ -43,7 +44,7 @@
                           label="Email"
                           v-model="u.email"
                           id="user-email"
-                          disabled
+                          readonly
                           ></v-text-field>
                       </v-row>
                       <v-row>
@@ -51,7 +52,7 @@
                           <v-checkbox
                             v-model="u.emailReminders"
                             label="Email Reminders"
-                            disabled
+                            readonly
                             color="green"
                             ></v-checkbox>
                         </v-col>

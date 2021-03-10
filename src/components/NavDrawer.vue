@@ -31,40 +31,6 @@
         </v-list-item-content>
       </v-list-item>
       <template v-if='cu'>
-        <!--
-        <v-list-item :to="{ name: 'new' }">
-          <v-list-item-icon>
-            <v-icon>mdi-pencil</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Create</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item :to="{ name: 'invitations' }">
-          <v-list-item-icon>
-            <v-icon>mdi-playlist-plus</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Join</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item :to="{ name: 'games', params: {status: 'running' } }">
-          <v-list-item-icon>
-            <v-icon>mdi-playlist-play</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Play</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item @click='logout'>
-          <v-list-item-icon>
-            <v-icon>mdi-logout</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Logout</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        -->
         <v-list-group
           no-action
           prepend-icon='mdi-pencil'
