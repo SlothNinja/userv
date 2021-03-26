@@ -7,6 +7,28 @@
     dark
     app
   >
+  <v-row no-gutters>
+    <v-col cols='1'>
+      <v-tooltip bottom color='info' dark>
+        <template v-slot:activator='{ on }'>
+          <v-app-bar-nav-icon v-on='on' @click.stop="$emit('input', !value)" ></v-app-bar-nav-icon>
+        </template>
+        <span>Menu</span>
+      </v-tooltip>
+    </v-col>
+    <v-col>
+        <slot></slot>
+      </v-col>
+      <v-col cols='1' align='right'>
+        <v-card :to="{ name: 'sng-home' }" color='white' width='100' >
+          <v-img width='100' :src="require('../assets/slothninja_logo_fullsize.png')" />
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-app-bar>
+</template>
+
+<!--
     <div style='height:3em' v-if='cuLoading'>
       &nbsp;
     </div>
@@ -42,23 +64,24 @@
 
   </v-app-bar>
 </template>
+-->
 
 
 <script>
-  import UserButton from '@/components/user/Button'
+  // import UserButton from '@/components/user/Button'
   import CurrentUser from '@/components/mixins/CurrentUser'
 
   export default {
     mixins: [ CurrentUser ],
     name: 'sn-toolbar',
-    components: {
-      'sn-user-btn': UserButton
-    },
+    // components: {
+    //   'sn-user-btn': UserButton
+    // },
     props: [ 'value' ],
-    computed: {
-      loginPath: function () {
-        return `/login/?redirect=${window.btoa(window.location.href)}`
-      }
-    }
+    // computed: {
+    //   loginPath: function () {
+    //     return `/login/?redirect=${window.btoa(window.location.href)}`
+    //   }
+    // }
   }
 </script>

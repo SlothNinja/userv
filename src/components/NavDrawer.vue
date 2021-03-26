@@ -1,18 +1,27 @@
 <template>
   <v-navigation-drawer
+    v-model='nav'
     clipped
-    v-model='drawer'
     light
     app
   >
-    <v-list-item>
+    <v-list-item v-if='cu'>
+      <v-list-item-icon>
+        <sn-user-btn size='x-small' :user='cu' ></sn-user-btn>
+      </v-list-item-icon>
       <v-list-item-content>
-        <v-list-item-title class='title font-weight-black text-center'>
-          SlothNinja Games
+        <v-list-item-title>
+          {{cu.name}}
         </v-list-item-title>
-        <v-list-item-subtitle class='subtitle-1 font-weight-bold text-center'>
-          Users Service
-        </v-list-item-subtitle>
+      </v-list-item-content>
+    </v-list-item>
+
+    <v-list-item v-else :to="{ name: 'login'}" >
+      <v-list-item-icon>
+        <v-icon>mdi-login</v-icon>
+      </v-list-item-icon>
+      <v-list-item-content>
+        <v-list-item-title>Login</v-list-item-title>
       </v-list-item-content>
     </v-list-item>
 
@@ -100,24 +109,15 @@
 </template>
 
 <script>
+  import UserButton from '@/components/user/Button'
   import CurrentUser from '@/components/mixins/CurrentUser'
 
   export default {
     mixins: [ CurrentUser ],
     name: 'nav-drawer',
     props: [ 'value' ],
-    methods: {
-      logout: function () {
-        var self = this
-        self.delete_cookie('sng-oauth')
-        self.cu = null
-        if (self.$route.name != 'user-home') {
-          self.$router.push({ name: 'user-home'})
-        }
-      },
-      delete_cookie: function (name) {
-        document.cookie = `${name}= ; domain = ${process.env.VUE_APP_COOKIE_DOMAIN} ; expires = Thu, 01 Jan 1970 00:00:00 GMT`
-      },
+    components: {
+      'sn-user-btn': UserButton
     },
     computed: {
       items: function () {
@@ -164,14 +164,12 @@
           },
         ]
       },
-      drawer: {
+      nav: {
         get: function () {
-          var self = this
-          return self.value
+          return this.value
         },
         set: function (value) {
-          var self = this
-          self.$emit('input', value)
+          this.$emit('input', value)
         }
       }
     }
