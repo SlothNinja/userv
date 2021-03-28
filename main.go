@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -18,68 +19,102 @@ import (
 )
 
 const (
-	hashKeyLength      = 64
-	blockKeyLength     = 32
-	sessionName        = "sng-oauth"
-	googleCloudProject = "GOOGLE_CLOUD_PROJECT"
+	hashKeyLength    = 64
+	blockKeyLength   = 32
+	sessionName      = "sng-oauth"
+	UserProjectIDEnv = "USER_PROJECT_ID"
+	UserDSURLEnv     = "USER_DS_URL"
+	UserHostURLEnv   = "USER_HOST_URL"
 )
 
 func main() {
-	setGinMode()
+	ctx := context.Background()
 
+	if sn.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+		cl := newClient(ctx)
+		defer cl.Close()
+		cl.Router.Run()
+	} else {
+		gin.SetMode(gin.DebugMode)
+		cl := newClient(ctx)
+		defer cl.Close()
+		cl.Router.RunTLS(getPort(), "cert.pem", "key.pem")
+	}
+}
+
+type client struct {
+	*sn.Client
+	logClient *log.Client
+}
+
+func newClient(ctx context.Context) *client {
 	logClient := newLogClient()
-	defer logClient.Close()
-
-	logger := logClient.Logger("user-service")
-
-	client := sn.NewClient(newDSClient(logger), logger, cache.New(30*time.Minute, 10*time.Minute), gin.New())
-
-	store, err := cookie.NewClient(client.Log, client.Cache).NewStore()
-	if err != nil {
-		logger.Panicf("unable create cookie store: %v", err)
+	cl := &client{
+		logClient: logClient,
+		Client: sn.NewClient(ctx, sn.Options{
+			ProjectID: getUserProjectID(),
+			DSURL:     getUserDSURL(),
+			Logger:    logClient.Logger("user-service"),
+			Cache:     cache.New(30*time.Minute, 10*time.Minute),
+			Router:    gin.New(),
+		}),
 	}
 
-	client.Router.Use(
+	store, err := cookie.NewClient(cl.Client).NewStore(ctx)
+	if err != nil {
+		cl.Log.Panicf("unable create cookie store: %v", err)
+	}
+
+	cl.Router.Use(
 		sessions.Sessions(sessionName, store),
-		gin.LoggerWithWriter(logger.StandardLogger(logging.Debug).Writer()),
-		gin.RecoveryWithWriter(logger.StandardLogger(logging.Critical).Writer()),
+		gin.LoggerWithWriter(cl.Log.StandardLogger(logging.Debug).Writer()),
+		gin.RecoveryWithWriter(cl.Log.StandardLogger(logging.Critical).Writer()),
 	)
 
-	// user controller
-	ucon.NewClient(client.DS, logger, client.Cache, client.Router)
+	// User controller
+	ucon.NewClient(cl.Client)
 
 	// warmup
-	client.Router.GET("_ah/warmup", func(c *gin.Context) { c.Status(http.StatusOK) })
+	cl.Router.GET("_ah/warmup", func(c *gin.Context) { c.Status(http.StatusOK) })
 
-	client.Router = staticRoutes(client.Router)
-	client.Router.Run()
+	return cl.addRoutes()
+}
+
+type CloseErrors struct {
+	Client    error
+	LogClient error
+}
+
+func (ce CloseErrors) Error() string {
+	return fmt.Sprintf("error closing clients: client: %q logClient: %q", ce.Client, ce.LogClient)
+}
+
+func (cl *client) Close() error {
+	var ce CloseErrors
+
+	ce.Client = cl.Client.Close()
+	ce.LogClient = cl.logClient.Close()
+
+	if ce.Client != nil || ce.LogClient != nil {
+		return ce
+	}
+	return nil
 }
 
 // staticHandler for local development since app.yaml is ignored
 // static files are handled via app.yaml routes when deployed
-func staticRoutes(r *gin.Engine) *gin.Engine {
+func (cl *client) addRoutes() *client {
 	if sn.IsProduction() {
-		return r
+		return cl
 	}
-	r.StaticFile("/", "dist/index.html")
-	r.StaticFile("/app.js", "dist/app.js")
-	r.StaticFile("/favicon.ico", "dist/favicon.ico")
-	r.Static("/img", "dist/img")
-	r.Static("/js", "dist/js")
-	r.Static("/css", "dist/css")
-	return r
-}
-
-func setGinMode() {
-	if sn.IsProduction() {
-		gin.SetMode(gin.ReleaseMode)
-		return
-	}
-	gin.SetMode(gin.DebugMode)
-}
-
-func getProjectID() string {
-	return os.Getenv(googleCloudProject)
+	cl.Router.StaticFile("/", "dist/index.html")
+	cl.Router.StaticFile("/app.js", "dist/app.js")
+	cl.Router.StaticFile("/favicon.ico", "dist/favicon.ico")
+	cl.Router.Static("/img", "dist/img")
+	cl.Router.Static("/js", "dist/js")
+	cl.Router.Static("/css", "dist/css")
+	return cl
 }
 
 func newDSClient(log *log.Logger) *datastore.Client {
@@ -91,9 +126,25 @@ func newDSClient(log *log.Logger) *datastore.Client {
 }
 
 func newLogClient() *log.Client {
-	client, err := log.NewClient(getProjectID())
+	client, err := log.NewClient(getUserProjectID())
 	if err != nil {
 		log.Panicf("unable to create logging client: %v", err)
 	}
 	return client
+}
+
+func getPort() string {
+	return ":" + os.Getenv("PORT")
+}
+
+func getUserProjectID() string {
+	return os.Getenv(UserProjectIDEnv)
+}
+
+func getUserDSURL() string {
+	return os.Getenv(UserDSURLEnv)
+}
+
+func getUserHostURL() string {
+	return os.Getenv(UserHostURLEnv)
 }
