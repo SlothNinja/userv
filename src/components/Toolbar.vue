@@ -69,7 +69,7 @@
 
 <script>
   // import UserButton from '@/components/user/Button'
-  import CurrentUser from '@/components/mixins/CurrentUser'
+  import CurrentUser from '@/components/lib/mixins/CurrentUser'
 
   export default {
     mixins: [ CurrentUser ],

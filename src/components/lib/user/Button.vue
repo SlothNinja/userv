@@ -7,18 +7,18 @@
       :medium="size ? size === 'medium' : true"
       :large="size ? size === 'large' : true"
       :color="color || 'black' "
-      :to="{ name: 'show', params: { id: user.id }}"
-    >
+      :href="showlink"
+      >
       <v-avatar :size="avatarSize" >
-	<img :src="gravatar(user.emailHash, size, user.gravType)" />
+        <img :src="gravatar(user.emailHash, size, user.gravType)" />
       </v-avatar>
     </v-btn>
-    <slot></slot>
+      <span class='ml-1'><slot></slot></span>
   </div>
 </template>
 
 <script>
-  import Gravatar from '@/components/mixins/Gravatar'
+  import Gravatar from '@/components/lib/mixins/Gravatar'
 
   export default {
     mixins: [ Gravatar ],
@@ -37,6 +37,11 @@
           default:
             return '54px'
         }
+      },
+      showlink: function () {
+        var self = this
+        let userv = process.env.VUE_APP_USER_DOMAIN
+        return `${userv}#/show/${self.user.id}`
       }
     }
   }
