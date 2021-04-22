@@ -37,7 +37,7 @@
                         readonly
                         ></v-text-field>
                     </v-row>
-                    <template v-if="currentUser">
+                    <template v-if="isCuOrAdmin(u)">
                       <v-row>
                         <v-text-field
                           name="user-email"
@@ -52,7 +52,6 @@
                           <v-checkbox
                             v-model="u.emailReminders"
                             label="Email Reminders"
-                            readonly
                             color="green"
                             ></v-checkbox>
                         </v-col>
@@ -159,9 +158,6 @@ export default {
       set: function (value) {
         this.$root.snackbar = value
       }
-    },
-    currentUser () {
-      return this.cu.id == this.u.id
     }
   },
   created () {

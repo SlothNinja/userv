@@ -40,7 +40,7 @@
       },
       showlink: function () {
         var self = this
-        let userv = process.env.VUE_APP_USER_DOMAIN
+        let userv = process.env.VUE_APP_USER_HOME
         return `${userv}#/show/${self.user.id}`
       }
     }

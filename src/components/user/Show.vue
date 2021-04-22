@@ -38,7 +38,7 @@
                         >
                       </v-text-field>
                     </v-row>
-                    <template v-if="currentUser">
+                    <template v-if="isCuOrAdmin(u)">
                       <v-row>
                         <v-text-field
                           name="email"
@@ -74,7 +74,14 @@
                       </v-row>
                     </template>
                     <v-card v-if="isAdmin">
-                      <v-btn @click="asUser" color="green" dark>As ({{u.name}})</v-btn>
+                      <v-row>
+                        <v-col>
+                          <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
+                        </v-col>
+                        <v-col>
+                          <v-btn @click="asUser" color="green" dark>As ({{u.name}})</v-btn>
+                        </v-col>
+                      </v-row>
                     </v-card>
                   </v-card-text>
                 </template>
@@ -149,17 +156,6 @@ export default {
         this.$root.snackbar = value
       }
     },
-    currentUser () {
-      let cuid = _.get(this.cu, 'id', false)
-      let uid = _.get(this.u, 'id', false)
-      if (cuid) {
-        return cuid == uid
-      }
-      return false
-    },
-    isAdmin () {
-      return _.get(this.cu, 'admin', false)
-    }
   },
   created () {
     let self = this
