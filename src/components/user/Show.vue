@@ -24,7 +24,7 @@
                 <template v-else>
                   <v-card-title primary-title>
                     <div class="font-weight-bold title">
-                      <sn-user-btn size="medium" :user="u" > {{u.name}} </sn-user-btn>
+                      <sn-user-btn medium :user="u" > {{u.name}} </sn-user-btn>
                     </div>
                   </v-card-title>
                   <v-card-text>
@@ -67,14 +67,7 @@
                             ></v-checkbox>
                         </v-col>
                       </v-row>
-                      <v-row>
-                        <v-col>
-                          <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
-                        </v-col>
-                      </v-row>
-                    </template>
-                    <v-card v-if="isAdmin">
-                      <v-row>
+                      <v-row v-if="isAdmin">
                         <v-col>
                           <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
                         </v-col>
@@ -82,7 +75,12 @@
                           <v-btn @click="asUser" color="green" dark>As ({{u.name}})</v-btn>
                         </v-col>
                       </v-row>
-                    </v-card>
+                      <v-row v-else>
+                        <v-col>
+                          <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
+                        </v-col>
+                      </v-row>
+                    </template>
                   </v-card-text>
                 </template>
               </v-col>
