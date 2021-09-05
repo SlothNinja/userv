@@ -67,7 +67,7 @@
                             ></v-checkbox>
                         </v-col>
                       </v-row>
-                      <v-row v-if="isAdmin">
+                      <v-row v-if="isAdmin(this.cu)">
                         <v-col>
                           <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
                         </v-col>
@@ -75,7 +75,7 @@
                           <v-btn @click="asUser" color="green" dark>As ({{u.name}})</v-btn>
                         </v-col>
                       </v-row>
-                      <v-row v-else>
+                      <v-row v-if="isCu(u)">
                         <v-col>
                           <v-btn color="green" dark :to="{ name: 'edit', params: { id: $route.params.id }}">Edit</v-btn>
                         </v-col>

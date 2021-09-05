@@ -22,19 +22,18 @@ new Vue({
     }
   },
   created () {
-      let self = this
-      self.fetchCurrentUser()
+      this.fetchCurrentUser()
   },
   watch: {
     '$route': 'fetchCurrentUser'
   },
   methods: {
     fetchCurrentUser () {
-      let self = this
-      console.log(`fetchCurrentUser cu: ${JSON.stringify(self.cu)}`)
-      if (self.cu != null) {
+      if (this.cu != null) {
         return
       }
+
+      let self = this
       axios.get('/current')
         .then(function (response) {
           let cu = _.get(response, 'data.cu', false)
