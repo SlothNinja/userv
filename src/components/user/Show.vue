@@ -38,7 +38,7 @@
                         >
                       </v-text-field>
                     </v-row>
-                    <template v-if="isCuOrAdmin(u)">
+                    <template v-if="isAdmin(this.cu) || (this.cuid == u.id)">
                       <v-row>
                         <v-text-field
                           name="email"

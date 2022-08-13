@@ -9,9 +9,9 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/logging"
+	snc "github.com/SlothNinja/client"
 	"github.com/SlothNinja/cookie"
 	"github.com/SlothNinja/log"
-	"github.com/SlothNinja/sn"
 	ucon "github.com/SlothNinja/user-controller"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -30,7 +30,7 @@ const (
 func main() {
 	ctx := context.Background()
 
-	if sn.IsProduction() {
+	if snc.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 		cl := newClient(ctx)
 		defer cl.Close()
@@ -44,7 +44,7 @@ func main() {
 }
 
 type client struct {
-	*sn.Client
+	*snc.Client
 	logClient *log.Client
 }
 
@@ -52,7 +52,7 @@ func newClient(ctx context.Context) *client {
 	logClient := newLogClient()
 	cl := &client{
 		logClient: logClient,
-		Client: sn.NewClient(ctx, sn.Options{
+		Client: snc.NewClient(ctx, snc.Options{
 			ProjectID: getUserProjectID(),
 			DSURL:     getUserDSURL(),
 			Logger:    logClient.Logger("user-service"),
@@ -105,7 +105,7 @@ func (cl *client) Close() error {
 // staticHandler for local development since app.yaml is ignored
 // static files are handled via app.yaml routes when deployed
 func (cl *client) addRoutes() *client {
-	if sn.IsProduction() {
+	if snc.IsProduction() {
 		return cl
 	}
 	cl.Router.StaticFile("/", "dist/index.html")
