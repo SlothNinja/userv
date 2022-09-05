@@ -9,7 +9,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/logging"
-	"github.com/SlothNinja/cookie/v2"
+	snc "github.com/SlothNinja/client"
 	"github.com/SlothNinja/log"
 	"github.com/SlothNinja/sn/v2"
 	ucon "github.com/SlothNinja/user-controller/v2"
@@ -44,7 +44,7 @@ func main() {
 }
 
 type client struct {
-	*sn.Client
+	*snc.Client
 	logClient *log.Client
 }
 
@@ -52,7 +52,7 @@ func newClient(ctx context.Context) *client {
 	logClient := newLogClient()
 	cl := &client{
 		logClient: logClient,
-		Client: sn.NewClient(ctx, sn.Options{
+		Client: snc.NewClient(ctx, snc.Options{
 			ProjectID: getUserProjectID(),
 			DSURL:     getUserDSURL(),
 			Logger:    logClient.Logger("user-service"),
@@ -61,7 +61,7 @@ func newClient(ctx context.Context) *client {
 		}),
 	}
 
-	store, err := cookie.NewClient(cl.Client).NewStore(ctx)
+	store, err := sn.NewCookieClient(cl.Client).NewStore(ctx)
 	if err != nil {
 		cl.Log.Panicf("unable create cookie store: %v", err)
 	}
