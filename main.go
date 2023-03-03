@@ -9,10 +9,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/logging"
-	snc "github.com/SlothNinja/client"
-	"github.com/SlothNinja/log"
 	"github.com/SlothNinja/sn/v2"
-	ucon "github.com/SlothNinja/user-controller/v2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/patrickmn/go-cache"
@@ -34,34 +31,43 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 		cl := newClient(ctx)
 		defer cl.Close()
+		cl.Router.TrustedPlatform = gin.PlatformGoogleAppEngine
 		cl.Router.Run()
 	} else {
 		gin.SetMode(gin.DebugMode)
 		cl := newClient(ctx)
 		defer cl.Close()
+		cl.Router.SetTrustedProxies(nil)
 		cl.Router.RunTLS(getPort(), "cert.pem", "key.pem")
 	}
 }
 
 type client struct {
-	*snc.Client
-	logClient *log.Client
+	*sn.Client
 }
 
 func newClient(ctx context.Context) *client {
 	logClient := newLogClient()
 	cl := &client{
-		logClient: logClient,
-		Client: snc.NewClient(ctx, snc.Options{
+		Client: sn.NewClient(ctx, sn.Options{
 			ProjectID: getUserProjectID(),
 			DSURL:     getUserDSURL(),
 			Logger:    logClient.Logger("user-service"),
 			Cache:     cache.New(30*time.Minute, 10*time.Minute),
-			Router:    gin.New(),
+			Router:    gin.Default(),
 		}),
 	}
 
 	store, err := sn.NewCookieClient(cl.Client).NewStore(ctx)
+	if sn.IsProduction() {
+		opts := sessions.Options{
+			Domain: "slothninja.com",
+			Path:   "/",
+			MaxAge: 60 * 60 * 24 * 7, // 7 days in seconds
+			Secure: true,
+		}
+		store.Options(opts)
+	}
 	if err != nil {
 		cl.Log.Panicf("unable create cookie store: %v", err)
 	}
@@ -73,7 +79,7 @@ func newClient(ctx context.Context) *client {
 	)
 
 	// User controller
-	ucon.NewClient(cl.Client)
+	NewClient(cl.Client)
 
 	// warmup
 	cl.Router.GET("_ah/warmup", func(c *gin.Context) { c.Status(http.StatusOK) })
@@ -94,7 +100,6 @@ func (cl *client) Close() error {
 	var ce CloseErrors
 
 	ce.Client = cl.Client.Close()
-	ce.LogClient = cl.logClient.Close()
 
 	if ce.Client != nil || ce.LogClient != nil {
 		return ce
@@ -117,18 +122,18 @@ func (cl *client) addRoutes() *client {
 	return cl
 }
 
-func newDSClient(log *log.Logger) *datastore.Client {
+func newDSClient(log *sn.Logger) *datastore.Client {
 	client, err := datastore.NewClient(context.Background(), "")
 	if err != nil {
-		log.Panicf("unable to create datastore client: %v", err)
+		sn.Panicf("unable to create datastore client: %v", err)
 	}
 	return client
 }
 
-func newLogClient() *log.Client {
-	client, err := log.NewClient(getUserProjectID())
+func newLogClient() *sn.LogClient {
+	client, err := sn.NewLogClient(getUserProjectID())
 	if err != nil {
-		log.Panicf("unable to create logging client: %v", err)
+		sn.Panicf("unable to create logging client: %v", err)
 	}
 	return client
 }
