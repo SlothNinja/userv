@@ -24,8 +24,8 @@ firebase.google.com/go v3.13.0+incompatible/go.mod h1:xlah6XbEyW6tbfSklcfe5FHJIw
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/SlothNinja/glicko v1.0.0 h1:WC/tRr+D+M/NibEBO86IS5IG3y7mTVtU/a4CoMGwGAM=
 github.com/SlothNinja/glicko v1.0.0/go.mod h1:bi+GqCI0m4esu1OuEw3RIatiwr2JOXzVnR9DWogZPLk=
-github.com/SlothNinja/sn/v2 v2.0.15 h1:NM2TOH0PkFERQgovGJj5gc4goqk+Se8QTpF4J9VclgU=
-github.com/SlothNinja/sn/v2 v2.0.15/go.mod h1:AU5HR4dkZCNfhCu4iZDeae2lKABgPr5m8vDLwP8QKfE=
+github.com/SlothNinja/sn/v2 v2.0.16 h1:e9rVvTCUXGMHjHxJz6k3l3JIvrvfHUPIP0++Ls6mh2Q=
+github.com/SlothNinja/sn/v2 v2.0.16/go.mod h1:AU5HR4dkZCNfhCu4iZDeae2lKABgPr5m8vDLwP8QKfE=
 github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1O2AihPM=
 github.com/bytedance/sonic v1.8.3 h1:pf6fGl5eqWYKkx1RcD4qpuX+BIUaduv/wTm5ekWJ80M=
 github.com/bytedance/sonic v1.8.3/go.mod h1:i736AoUSYt75HyZLoJW9ERYxcy6eaN6h4BZXU064P/U=

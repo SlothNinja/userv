@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/datastore v1.10.0
 	cloud.google.com/go/logging v1.7.0
-	github.com/SlothNinja/sn/v2 v2.0.15
+	github.com/SlothNinja/sn/v2 v2.0.16
 	github.com/gin-contrib/sessions v0.0.5
 	github.com/gin-gonic/gin v1.9.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
