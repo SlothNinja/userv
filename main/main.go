@@ -113,12 +113,12 @@ func (cl *client) addRoutes() *client {
 	if sn.IsProduction() {
 		return cl
 	}
-	cl.Router.StaticFile("/", "dist/index.html")
-	cl.Router.StaticFile("/app.js", "dist/app.js")
-	cl.Router.StaticFile("/favicon.ico", "dist/favicon.ico")
-	cl.Router.Static("/img", "dist/img")
-	cl.Router.Static("/js", "dist/js")
-	cl.Router.Static("/css", "dist/css")
+	cl.Router.StaticFile("/", "../dist/index.html")
+	cl.Router.StaticFile("/app.js", "../dist/app.js")
+	cl.Router.StaticFile("/favicon.ico", "../dist/favicon.ico")
+	cl.Router.Static("/img", "../dist/img")
+	cl.Router.Static("/js", "../dist/js")
+	cl.Router.Static("/css", "../dist/css")
 	return cl
 }
 
