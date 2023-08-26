@@ -1,58 +1,46 @@
-import Vue from 'vue'
+// Components
 import App from './App.vue'
-import vuetify from './plugins/vuetify'
-import router from './router/router'
-import { Plugin } from 'vue-fragment'
 
-Vue.use(Plugin)
+// Composables
+import { createApp, computed, readonly, unref, ref, watch } from 'vue'
+import { VueFire, VueFireAuth } from 'vuefire'
+import { firebaseApp } from '@/composables/firebase'
 
-const _ = require('lodash')
-const axios = require('axios')
+// Plugins
+import { registerPlugins } from '@/plugins'
 
-Vue.config.productionTip = false
+const app = createApp(App)
 
-new Vue({
-  vuetify,
-  data () {
-    return {
-      cu: null,
-      nav: false,
-      cuLoading: true,
-      snackbar: { open: false, message: '' }
-    }
-  },
-  created () {
-      this.fetchCurrentUser()
-  },
-  watch: {
-    '$route': 'fetchCurrentUser'
-  },
-  methods: {
-    fetchCurrentUser () {
-      if (this.cu != null) {
-        return
-      }
+// creat app
+app
+  .use(VueFire, {
+    // imported above but could also just be created here
+    firebaseApp,
+    modules: [
+      // we will see other modules later on
+      VueFireAuth(),
+    ],
+  })
 
-      let self = this
-      axios.get('/current')
-        .then(function (response) {
-          let cu = _.get(response, 'data.cu', false)
-          if (cu) {
-            self.cu = cu
-          }
-                
-          self.cuLoading = false
-        })
-        .catch(function (response) {
-          let msg = _.get(response, 'data.message', false)
-          if (msg) {
-            self.snackbar.message = 'Server Error.  Try again.'
-            self.snackbar.open = true
-          }
-          self.cuLoading = false
-        })
-    },
-  },
-  router,
-  render: h => h(App),
-}).$mount('#app')
+/////////////////////////////////////////////////////
+// get and provide current user
+import  { useFetch } from '@/composables/fetch'
+import _get from 'lodash/get'
+import { cuKey } from '@/composables/keys'
+
+const cuURL = `${import.meta.env.VITE_USER_BACKEND}sn/user/current`
+const { data, error } = useFetch(cuURL)
+const cu = ref({})
+
+watch( data, () => { cu.value = _get(unref(data), 'CU', {}) })
+
+function updateCU(user) {
+  cu.value = unref(user)
+}
+
+app.provide( cuKey, { cu, updateCU })
+////////////////////////////////////////////////////
+
+registerPlugins(app)
+
+app.mount('#app')

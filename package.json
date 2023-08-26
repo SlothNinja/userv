@@ -1,66 +1,32 @@
 {
-  "name": "userv",
-  "version": "1.0.22",
+  "name": "vuetify-project",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
-    "watch": "vue-cli-service build --watch --mode development"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "axios": "^0.27.2",
-    "core-js": "^3.24.1",
-    "fibers": "^5.0.2",
+    "@mdi/font": "7.0.96",
+    "@vitejs/plugin-basic-ssl": "^1.0.1",
+    "core-js": "^3.29.0",
+    "firebase": "^10.1.0",
     "lodash": "^4.17.21",
-    "node-sass": "^5.0.0",
-    "npm-check-updates": "^11.8.5",
-    "velocity-animate": "^1.5.2",
-    "vue": "^2.7.8",
-    "vue-fragment": "^1.6.0",
-    "vue-router": "^3.5.4",
-    "vue-script2": "^2.1.0",
-    "vuetify": "^2.6.9"
+    "roboto-fontface": "*",
+    "vue": "^3.2.0",
+    "vue-router": "^4.0.0",
+    "vuefire": "^3.1.12",
+    "vuetify": "^3.0.0",
+    "webfontloader": "^1.0.0"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^4.5.19",
-    "@vue/cli-plugin-eslint": "^4.5.19",
-    "@vue/cli-service": "^4.5.19",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^6.8.0",
-    "eslint-plugin-vue": "^7.20.0",
-    "jquery": "^3.6.0",
-    "sass": "1.32",
-    "sass-loader": "^10.3.1",
-    "stylus": "^0.59.0",
-    "stylus-loader": "^4.3.3",
-    "vue-cli-plugin-vuetify": "^2.5.1",
-    "vue-template-compiler": "^2.7.8",
-    "vuetify-loader": "^1.9.2",
-    "webpack": "^4.46.0"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended"
-    ],
-    "rules": {},
-    "parserOptions": {
-      "parser": "babel-eslint"
-    }
-  },
-  "postcss": {
-    "plugins": {
-      "autoprefixer": {}
-    }
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not ie <= 8"
-  ]
+    "@vitejs/plugin-vue": "^4.0.0",
+    "eslint": "^8.37.0",
+    "eslint-plugin-vue": "^9.3.0",
+    "sass": "^1.60.0",
+    "vite": "^4.2.0",
+    "vite-plugin-vuetify": "^1.0.0"
+  }
 }
