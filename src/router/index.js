@@ -18,15 +18,26 @@ const routes = [
         // which is lazy-loaded when the route is visited.
         component: () => import(/* webpackChunkName: "home" */ '@/views/Home.vue'),
       },
+    ],
+  },
+  {
+    path: '/user',
+    component: () => import('@/layouts/default/Default.vue'),
+    children: [
       {
         path: '/user/:id',
         name: 'User',
         component: () => import(/* webpackChunkName: "user" */ '@/views/Show.vue'),
       },
       {
-        path: '/edit/:id',
+        path: '/user/edit/:id',
         name: 'Edit',
-        component: () => import(/* webpackChunkName: "user" */ '@/views/Edit.vue'),
+        component: () => import(/* webpackChunkName: "edit" */ '@/views/Edit.vue'),
+      },
+      {
+        path: '/user/new',
+        name: 'New',
+        component: () => import(/* webpackChunkName: "new" */ '@/views/New.vue'),
       },
     ],
   },
@@ -151,7 +162,7 @@ const routes = [
     }
   },
   {
-    path: '/login',
+    path: '/user/login',
     name: 'Login',
     beforeEnter() {
       const url = `${import.meta.env.VITE_USER_BACKEND}sn/user/login`
@@ -159,7 +170,7 @@ const routes = [
     }
   },
   {
-    path: '/logout',
+    path: '/user/logout',
     name: 'Logout',
     beforeEnter() {
       const query = `?redirect=${encodeURIComponent(import.meta.env.VITE_USER_FRONTEND)}`

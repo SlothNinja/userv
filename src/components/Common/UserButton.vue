@@ -32,7 +32,7 @@ const router = useRouter()
 
 function toUser() {
   const id = _get(props.user, 'ID', -1)
-  if (props.id != -1) {
+  if (id != -1) {
     router.push({ name: 'User', params: { id: id } })
   }
 }

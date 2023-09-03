@@ -27,3 +27,11 @@ export function useCreator(header) {
     GravType: h.CreatorGravType
   }
 }
+
+export function useIsCUOrAdmin(cu, user) {
+  const cuid = _get(unref(cu), 'ID', -1)
+  const uid = _get(unref(user), 'ID', -2)
+  const isCU = cuid == uid
+  const isAdmin = _get(unref(cu), 'Admin', false)
+  return isCU || isAdmin
+}

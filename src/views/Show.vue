@@ -3,5 +3,5 @@
 </template>
 
 <script setup>
-  import Show from '@/components/Show.vue'
+import Show from '@/components/User/Show.vue'
 </script>

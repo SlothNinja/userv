@@ -3,5 +3,5 @@
 </template>
 
 <script setup>
-  import Edit from '@/components/Edit.vue'
+import Edit from '@/components/User/Edit.vue'
 </script>

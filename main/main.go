@@ -7,13 +7,19 @@ import (
 	"github.com/SlothNinja/sn/v3"
 )
 
+const homePath = "/"
+
 func main() {
-	cl := sn.NewUserServiceClient(
+	cl := newClient(
 		context.Background(),
 		sn.WithLoggerID("user-service"),
 		sn.WithCORSAllow("https://user.fake-slothninja.com:8088/*"),
 	)
-	defer cl.Close()
+	defer func() {
+		if err := cl.close(); err != nil {
+			sn.Warningf("error when closing client: %w", err)
+		}
+	}()
 
 	if sn.IsProduction() {
 		cl.Router.Run()
