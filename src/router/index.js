@@ -178,6 +178,14 @@ const routes = [
       window.location.replace(url)
     }
   },
+  {
+    path: '/user/:id/as',
+    name: 'AsUser',
+    beforeEnter(to) {
+      const url = `${import.meta.env.VITE_USER_BACKEND}sn/user/${to.params.id}/as`
+      window.location.replace(url)
+    }
+  },
 ]
 
 const router = createRouter({

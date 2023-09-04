@@ -2,32 +2,37 @@ package main
 
 import (
 	"context"
-	"os"
 
 	"github.com/SlothNinja/sn/v3"
+	"github.com/SlothNinja/userv/main/client"
 )
 
-const homePath = "/"
-
 func main() {
-	cl := newClient(
+	if sn.IsProduction() {
+		cl := client.New(
+			context.Background(),
+			sn.WithLoggerID("user-service"),
+		)
+		defer func() {
+			if err := cl.Close(); err != nil {
+				sn.Warningf("error when closing client: %w", err)
+			}
+		}()
+
+		cl.Router.Run()
+		return
+	}
+
+	cl := client.New(
 		context.Background(),
 		sn.WithLoggerID("user-service"),
 		sn.WithCORSAllow("https://user.fake-slothninja.com:8088/*"),
 	)
 	defer func() {
-		if err := cl.close(); err != nil {
+		if err := cl.Close(); err != nil {
 			sn.Warningf("error when closing client: %w", err)
 		}
 	}()
 
-	if sn.IsProduction() {
-		cl.Router.Run()
-	} else {
-		cl.Router.RunTLS(getPort(), "cert.pem", "key.pem")
-	}
-}
-
-func getPort() string {
-	return ":" + os.Getenv("PORT")
+	cl.Router.RunTLS(":"+cl.GetPort(), "cert.pem", "key.pem")
 }

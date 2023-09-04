@@ -7,7 +7,10 @@
             <Form v-if='user' v-model='user' :cu='cu'>
               <v-row>
                 <v-col v-if='cu.Admin'>
-                  <v-btn small color='green' dark @click='asUser'>As ({{user.Name}})</v-btn>
+                  <v-btn small color='green' dark
+                    :to="{ name: 'AsUser', params: { id: $route.params.id }}">
+                    As ({{user.Name}})
+                  </v-btn>
                 </v-col>
                 <v-col v-if='isCUOrAdmin'>
                   <v-btn small color='green' dark :to="{ name: 'Edit', params: { id: $route.params.id }}">Edit</v-btn>
