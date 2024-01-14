@@ -24,6 +24,7 @@
 node_modules/
 .yarn
 dist/
+private/
 
 userv
 gin-bin
@@ -31,3 +32,4 @@ app.yaml
 db
 backend
 src/components/lib
+main/main

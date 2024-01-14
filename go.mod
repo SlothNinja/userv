@@ -5,17 +5,13 @@ go 1.21
 require (
 	cloud.google.com/go/datastore v1.10.0
 	firebase.google.com/go v3.13.0+incompatible
-	github.com/SlothNinja/sn/v3 v3.0.0
+	github.com/SlothNinja/sn/v3 v3.0.4
 	github.com/elliotchance/pie/v2 v2.5.1
 	github.com/gin-gonic/gin v1.9.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gorilla/securecookie v1.1.1
 	golang.org/x/oauth2 v0.5.0
-	google.golang.org/api v0.111.0
-	google.golang.org/grpc v1.53.0
 )
-
-replace github.com/SlothNinja/sn/v3 => ./private/sn
 
 require (
 	cloud.google.com/go v0.110.0 // indirect
@@ -27,6 +23,7 @@ require (
 	cloud.google.com/go/longrunning v0.4.1 // indirect
 	cloud.google.com/go/storage v1.29.0 // indirect
 	github.com/Pallinder/go-randomdata v1.2.0 // indirect
+	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df // indirect
 	github.com/bytedance/sonic v1.8.3 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gin-contrib/cors v1.4.0 // indirect
@@ -67,8 +64,10 @@ require (
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
+	google.golang.org/api v0.111.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230301171018-9ab4bdc49ad5 // indirect
+	google.golang.org/grpc v1.53.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

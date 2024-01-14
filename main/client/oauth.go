@@ -89,7 +89,14 @@ func (cl *Client) getLoginURL(path, state string) string {
 }
 
 func (cl *Client) oauth2Config(path string, scopes ...string) *oauth2.Config {
-	redirectURL := fmt.Sprintf("%s:%s/%s", cl.GetBackEndURL(), cl.GetBackEndPort(), strings.TrimPrefix(path, "/"))
+	cl.Log.Debugf("Back End Port: %v", cl.GetBackEndPort())
+	cl.Log.Debugf("Port: %v", cl.GetPort())
+	redirectURL := fmt.Sprintf("%s/%s", cl.GetBackEndURL(), strings.TrimPrefix(path, "/"))
+	if !sn.IsProduction() {
+		redirectURL = fmt.Sprintf("%s:%s/%s", cl.GetBackEndURL(), cl.GetBackEndPort(), strings.TrimPrefix(path, "/"))
+	}
+
+	cl.Log.Debugf("redirectURL: %v", redirectURL)
 	return &oauth2.Config{
 		ClientID:     os.Getenv("CLIENT_ID"),
 		ClientSecret: os.Getenv("CLIENT_SECRET"),
