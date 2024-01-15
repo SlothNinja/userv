@@ -89,11 +89,9 @@ func (cl *Client) getLoginURL(path, state string) string {
 }
 
 func (cl *Client) oauth2Config(path string, scopes ...string) *oauth2.Config {
-	cl.Log.Debugf("Back End Port: %v", cl.GetBackEndPort())
-	cl.Log.Debugf("Port: %v", cl.GetPort())
-	redirectURL := fmt.Sprintf("%s/%s", cl.GetBackEndURL(), strings.TrimPrefix(path, "/"))
+	redirectURL := fmt.Sprintf("https://%s/%s", cl.GetBackEndURL(), strings.TrimPrefix(path, "/"))
 	if !sn.IsProduction() {
-		redirectURL = fmt.Sprintf("%s:%s/%s", cl.GetBackEndURL(), cl.GetBackEndPort(), strings.TrimPrefix(path, "/"))
+		redirectURL = fmt.Sprintf("https://%s:%s/%s", cl.GetBackEndURL(), cl.GetBackEndPort(), strings.TrimPrefix(path, "/"))
 	}
 
 	cl.Log.Debugf("redirectURL: %v", redirectURL)
@@ -149,24 +147,6 @@ type oauth struct {
 	ID        sn.UID
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-func (o *oauth) Load(ps []datastore.Property) error {
-	return datastore.LoadStruct(o, ps)
-}
-
-func (o *oauth) Save() ([]datastore.Property, error) {
-	t := time.Now()
-	if o.CreatedAt.IsZero() {
-		o.CreatedAt = t
-	}
-	o.UpdatedAt = t
-	return datastore.SaveStruct(o)
-}
-
-func (o *oauth) LoadKey(k *datastore.Key) error {
-	o.Key = k
-	return nil
 }
 
 func pk() *datastore.Key {
@@ -303,7 +283,7 @@ func (cl *Client) auth(authPath string) gin.HandlerFunc {
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		ctx.Redirect(http.StatusSeeOther, fmt.Sprintf("https://%s:%s/user/new", cl.GetURL(), cl.GetFrontEndPort()))
+		ctx.Redirect(http.StatusSeeOther, fmt.Sprintf("https://%s:%s/user/new", cl.GetFrontEndURL(), cl.GetFrontEndPort()))
 	}
 }
 
@@ -366,7 +346,8 @@ func (cl *Client) as(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
-	ctx.Redirect(http.StatusSeeOther, cl.GetFrontEndURL()+":"+cl.GetFrontEndPort())
+	redirect := fmt.Sprintf("https://%s:%s/user/new", cl.GetFrontEndURL(), cl.GetFrontEndPort())
+	ctx.Redirect(http.StatusSeeOther, redirect)
 }
 
 func (cl *Client) getUInfo(ctx *gin.Context, path string) (oaInfo, error) {

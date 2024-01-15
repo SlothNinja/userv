@@ -18,7 +18,7 @@
               </v-row>
               <v-row v-if='isCUOrAdmin'>
                 <v-col>
-                  <v-btn @click='putData' color='green' dark>Update</v-btn>
+                  <v-btn @click='putData' color='green' dark>Create</v-btn>
                 </v-col>
                 <v-col class='text-xs-right'>
                   <v-btn :to="{name: 'Logout'}" color='green' dark>Cancel</v-btn>
@@ -56,7 +56,6 @@ const { cu, updateCU } = inject(cuKey)
 const route = useRoute()
 const router = useRouter()
 const gravTypes = useGravTypes()
-const id = computed(() => _get(route, 'params.id', 0))
 
 const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
 
@@ -78,7 +77,7 @@ watch(data, () =>
 
 const loading = computed(() => _isEmpty(unref(user)))
 
-const putPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/${unref(id)}/update`)
+const putPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/new`)
 
 const redirect = computed(() => !unref(loading) && _isEmpty(unref(user)))
 
@@ -91,9 +90,10 @@ function putData() {
 }
 
 function update(response) {
-  const u = _get(unref(response), 'CU', {})
-  if (!_isEmpty(u)) {
-    updateCU(u)
+  const cu = _get(unref(response), 'CU', {})
+  console.log(`cu: ${JSON.stringify(cu)}`)
+  if (!_isEmpty(cu)) {
+    updateCU(cu)
   }
 
   const msg = _get(unref(response), 'Message', '')

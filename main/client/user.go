@@ -198,7 +198,7 @@ func (cl *Client) createUserHandler(ctx *gin.Context) {
 	cl.Log.Debugf(msgEnter)
 	defer cl.Log.Debugf(msgExit)
 
-	u, err := cl.createUser(ctx)
+	cu, u, err := cl.createUser(ctx)
 	if err != nil {
 		cl.Log.Warningf("cannot create user: %w", err)
 		ctx.Redirect(http.StatusSeeOther, cl.GetHome())
@@ -206,76 +206,85 @@ func (cl *Client) createUserHandler(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"user":    u,
-		"message": "account created for " + u.Name,
+		"CU":      cu,
+		"User":    u,
+		"Message": "account created for " + u.Name,
 	})
 }
 
-func (cl *Client) createUser(ctx *gin.Context) (sn.User, error) {
+// returns current user, created user, and error
+func (cl *Client) createUser(ctx *gin.Context) (sn.User, sn.User, error) {
+	cl.Log.Debugf(msgEnter)
+	defer cl.Log.Debugf(msgExit)
 
 	cu, err := cl.RequireLogin(ctx)
+	cl.Log.Debugf("cu: %#v", cu)
 	if err == nil && cu.ID != 0 {
 		cl.Log.Warningf("%s(%d) already has an account", cu.Name, cu.ID)
-		return cu, err
+		return sn.User{}, sn.User{}, err
 	}
 
 	token, ok := cl.Session(ctx).GetUserToken()
 	if !ok {
-		return sn.User{}, errors.New("missing token")
+		return sn.User{}, sn.User{}, errors.New("missing token")
 	}
 
 	if token.ID != 0 {
 		// ctx.Redirect(http.StatusSeeOther, homePath)
-		return sn.User{}, errors.New("user present, no need for new one")
+		return sn.User{}, sn.User{}, errors.New("user present, no need for new one")
 	}
 
 	u := newUser(0)
-	err = ctx.ShouldBind(u)
+	err = ctx.ShouldBind(&u)
 	if err != nil {
-		return sn.User{}, err
+		return sn.User{}, sn.User{}, err
 	}
 
 	u, _, err = cl.updateUser(ctx, u, u, u)
 	if err != nil {
-		return sn.User{}, err
+		return sn.User{}, sn.User{}, err
 	}
 
 	ks, err := cl.DS.AllocateIDs(ctx, []*datastore.Key{newUserKey(u.ID)})
 	if err != nil {
-		return sn.User{}, err
+		return sn.User{}, sn.User{}, err
 	}
 
 	u.ID = sn.UID(ks[0].ID)
 	u.LCName = strings.ToLower(u.Name)
 
+	t := time.Now()
 	oaid := genOAuthID(token.Sub)
 	oa := newOAuth(oaid)
 	oa.ID = u.ID
-	oa.UpdatedAt = time.Now()
+
+	oa.UpdatedAt = t
+	oa.CreatedAt = t
+	u.UpdatedAt = t
+	u.CreatedAt = t
+	u.Joined = t
+
 	_, err = cl.DS.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
 		ks := []*datastore.Key{oa.Key, newUserKey(u.ID)}
-		es := []interface{}{&oa, u}
+		es := []interface{}{&oa, &u}
+		cl.Log.Debugf("ks: %v", ks)
+		cl.Log.Debugf("es: %v", es)
 		_, err := tx.PutMulti(ks, es)
 		return err
 
 	})
 
 	if err != nil {
-		return sn.User{}, err
+		return sn.User{}, sn.User{}, err
 	}
 
-	if !cu.Admin {
-		cu = u
-		token.ID = u.ID
-
-		err = cl.Session(ctx).SaveToken(token)
-		if err != nil {
-			return sn.User{}, err
-		}
-
+	token.Data = u.Data
+	err = cl.Session(ctx).SaveToken(token)
+	if err != nil {
+		return sn.User{}, sn.User{}, err
 	}
+	return u, u, nil
 
-	return u, nil
 }
 
 func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
@@ -327,6 +336,7 @@ func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 			return
 		}
 
+		u.UpdatedAt = time.Now()
 		_, err = cl.DS.Put(ctx, newUserKey(u.ID), &u)
 		if err != nil {
 			sn.JErr(ctx, err)
