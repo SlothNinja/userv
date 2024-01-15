@@ -1,6 +1,6 @@
 {
-  "name": "vuetify-project",
-  "version": "0.0.0",
+  "name": "user-service",
+  "version": "1.0.28",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -15,10 +15,10 @@
     "firebase": "^10.1.0",
     "lodash": "^4.17.21",
     "roboto-fontface": "*",
-    "vue": "^3.2.0",
+    "vue": "^3.4.13",
     "vue-router": "^4.0.0",
     "vuefire": "^3.1.12",
-    "vuetify": "^3.0.0",
+    "vuetify": "^3.4.10",
     "webfontloader": "^1.0.0"
   },
   "devDependencies": {

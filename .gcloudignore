@@ -26,12 +26,18 @@
 
 node_modules/
 src/
+cmd/
+.yarn/
 vue.config.js
 babel.config.js
 package.json
 package-lock.json
 public/
 userv
-gin-bin
+main/gin-bin
+main/main
 db
 backend
+
+# Hidden
+.*
