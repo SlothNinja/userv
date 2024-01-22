@@ -6,15 +6,15 @@
 /////////////////////////////////////////////////////
 // get and provide current user
 import { provide, unref, ref, watch } from 'vue'
-import  { useFetch } from '@/composables/fetch'
+import  { useFetch } from '@/snvue/fetch'
 import { cuKey } from '@/composables/keys'
 import _get from 'lodash/get'
 
 const cuURL = `${import.meta.env.VITE_USER_BACKEND}sn/user/current`
-const { data, error } = useFetch(cuURL)
+const { state, isLoading, isReady, error } = useFetch(cuURL)
 const cu = ref({})
 
-watch( data, () => { cu.value = _get(unref(data), 'CU', {}) })
+watch( state, () => { cu.value = _get(unref(state), 'CU', {}) })
 
 function updateCU(user) {
   cu.value = unref(user)

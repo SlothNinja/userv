@@ -42,10 +42,10 @@ const { cu, fetchCU } = inject(cuKey)
 const route = useRoute()
 const id = computed(() => _get(route, 'params.id', 0))
 
-import { useFetch } from '@/composables/fetch'
+import { useFetch } from '@/snvue/fetch'
 
 const url = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/${unref(id)}/json`)
-const { data, error } = useFetch(url)
+const { state, isReady, isLoading, error } = useFetch(url)
 
 import { useIsCUOrAdmin } from '@/composables/user'
 const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
@@ -53,12 +53,10 @@ const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
 const user = computed(
   () => {
     if (unref(id) != 0) {
-      return _get(unref(data), 'User', null)
+      return _get(unref(state), 'User', null)
     }
     return null
   }
 )
-
-const loading = computed(() => _isEmpty(unref(user)))
 
 </script>

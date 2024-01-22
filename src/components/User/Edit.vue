@@ -59,15 +59,15 @@ const id = computed(() => _get(route, 'params.id', 0))
 import { useIsCUOrAdmin } from '@/composables/user'
 const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
 
-import { useFetch, usePut } from '@/composables/fetch'
+import { useFetch, usePut } from '@/snvue/fetch'
 
 const getPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/${unref(id)}/json`)
-const { data, error } = useFetch(getPath)
+const { state, isReady, isLoading, error } = useFetch(getPath)
 
 const user = computed(
   () => {
     if (unref(id) != 0) {
-      return _get(unref(data), 'User', null)
+      return _get(unref(state), 'User', null)
     }
     return null
   }

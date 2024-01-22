@@ -59,16 +59,16 @@ const gravTypes = useGravTypes()
 
 const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
 
-import { useFetch, usePut } from '@/composables/fetch'
+import { useFetch, usePut } from '@/snvue/fetch'
 
 const getPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/new`)
-const { data, error } = useFetch(getPath)
+const { state, isReady, isLoading, error } = useFetch(getPath)
 
-const user = computed( () => _get(unref(data), 'User', null))
+const user = computed( () => _get(unref(state), 'User', null))
 
-watch(data, () =>
+watch(state, () =>
   {
-    const error = _get(unref(data), 'Error', '')
+    const error = _get(unref(state), 'Error', '')
     if (!_isEmpty(error)) {
       router.push({name: 'Home'})
     }
@@ -85,8 +85,8 @@ const redirect = computed(() => !unref(loading) && _isEmpty(unref(user)))
 const { snackbar, updateSnackbar } = inject(snackKey)
 
 function putData() {
-  const { response, error } = usePut(putPath, user)
-  watch(response, () => update(response))
+  const { state, isLoading, isReady, error } = usePut(putPath, user)
+  watch(isReady, () => update(state))
 }
 
 function update(response) {
