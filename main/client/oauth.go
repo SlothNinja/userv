@@ -283,7 +283,12 @@ func (cl *Client) auth(authPath string) gin.HandlerFunc {
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		ctx.Redirect(http.StatusSeeOther, fmt.Sprintf("https://%s:%s/user/new", cl.GetFrontEndURL(), cl.GetFrontEndPort()))
+		redirectPath := fmt.Sprintf("https://%s/user/new", cl.GetFrontEndURL())
+		if !sn.IsProduction() {
+			redirectPath = fmt.Sprintf("https://%s:%s/user/new", cl.GetFrontEndURL(), cl.GetFrontEndPort())
+		}
+		cl.Log.Debugf("redirectPath: %v", redirectPath)
+		ctx.Redirect(http.StatusSeeOther, redirectPath)
 	}
 }
 

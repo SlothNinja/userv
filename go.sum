@@ -24,6 +24,8 @@ github.com/Pallinder/go-randomdata v1.2.0 h1:DZ41wBchNRb/0GfsePLiSwb0PHZmT67XY00
 github.com/Pallinder/go-randomdata v1.2.0/go.mod h1:yHmJgulpD2Nfrm0cR9tI/+oAgRqCQQixsA8HyRZfV9Y=
 github.com/SlothNinja/sn/v3 v3.0.4 h1:+rLxRMbai6e3YqT33rh7jzCCOnl6dm/A1u1szPHxgxs=
 github.com/SlothNinja/sn/v3 v3.0.4/go.mod h1:BH1D8pWYjUi4Q9/anUKfHiu8GZWFTQ2iJSuN8pCg2N4=
+github.com/SlothNinja/sn/v3 v3.0.5 h1:7kQjdI6mfL07uXe9CCohFJIHSh4HrywQ0UCPLFwQrrA=
+github.com/SlothNinja/sn/v3 v3.0.5/go.mod h1:BH1D8pWYjUi4Q9/anUKfHiu8GZWFTQ2iJSuN8pCg2N4=
 github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df h1:GSoSVRLoBaFpOOds6QyY1L8AX7uoY+Ln3BHc22W40X0=
 github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df/go.mod h1:hiVxq5OP2bUGBRNS3Z/bt/reCLFNbdcST6gISi1fiOM=
 github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1O2AihPM=

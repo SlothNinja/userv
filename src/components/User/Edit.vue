@@ -81,8 +81,8 @@ const putPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/${un
 const { snackbar, updateSnackbar } = inject(snackKey)
 
 function putData() {
-  const { response, error } = usePut(putPath, user)
-  watch(response, () => update(response))
+  const { state, isLoading, isReady, error } = usePut(putPath, user)
+  watch(isReady, () => update(state))
 }
 
 function update(response) {

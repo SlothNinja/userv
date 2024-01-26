@@ -5,12 +5,13 @@ go 1.21
 require (
 	cloud.google.com/go/datastore v1.10.0
 	firebase.google.com/go v3.13.0+incompatible
-	github.com/SlothNinja/sn/v3 v3.0.4
+	github.com/SlothNinja/sn/v3 v3.0.5
 	github.com/elliotchance/pie/v2 v2.5.1
 	github.com/gin-gonic/gin v1.9.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gorilla/securecookie v1.1.1
 	golang.org/x/oauth2 v0.5.0
+
 )
 
 require (
