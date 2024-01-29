@@ -287,7 +287,6 @@ func (cl *Client) auth(authPath string) gin.HandlerFunc {
 		if !sn.IsProduction() {
 			redirectPath = fmt.Sprintf("https://%s:%s/user/new", cl.GetFrontEndURL(), cl.GetFrontEndPort())
 		}
-		cl.Log.Debugf("redirectPath: %v", redirectPath)
 		ctx.Redirect(http.StatusSeeOther, redirectPath)
 	}
 }

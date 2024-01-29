@@ -218,7 +218,6 @@ func (cl *Client) createUser(ctx *gin.Context) (sn.User, sn.User, error) {
 	defer cl.Log.Debugf(msgExit)
 
 	cu, err := cl.RequireLogin(ctx)
-	cl.Log.Debugf("cu: %#v", cu)
 	if err == nil && cu.ID != 0 {
 		cl.Log.Warningf("%s(%d) already has an account", cu.Name, cu.ID)
 		return sn.User{}, sn.User{}, err
@@ -267,8 +266,6 @@ func (cl *Client) createUser(ctx *gin.Context) (sn.User, sn.User, error) {
 	_, err = cl.DS.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
 		ks := []*datastore.Key{oa.Key, newUserKey(u.ID)}
 		es := []interface{}{&oa, &u}
-		cl.Log.Debugf("ks: %v", ks)
-		cl.Log.Debugf("es: %v", es)
 		_, err := tx.PutMulti(ks, es)
 		return err
 
@@ -279,6 +276,9 @@ func (cl *Client) createUser(ctx *gin.Context) (sn.User, sn.User, error) {
 	}
 
 	token.Data = u.Data
+	if token.ID == 0 {
+		token.ID = u.ID
+	}
 	err = cl.Session(ctx).SaveToken(token)
 	if err != nil {
 		return sn.User{}, sn.User{}, err
@@ -325,6 +325,7 @@ func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 			return
 		}
 
+		cl.Log.Debugf("obj: %#v", obj)
 		u, changed, err := cl.updateUser(ctx, cu, u, obj)
 		if err != nil {
 			sn.JErr(ctx, err)

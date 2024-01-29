@@ -4,7 +4,7 @@
       <v-container>
         <v-row>
           <v-col cols='6'>
-            <Form v-if='user' v-model='user' :cu='cu' :loading='loading' create >
+            <Form v-if='user' v-model='user' :cu='cu' :loading='isFetching' create >
               <v-row v-if='isCUOrAdmin'>
                 <v-col>
                   <v-radio-group v-model='user.GravType' inline label='Gravatar'>
@@ -42,8 +42,8 @@ import Greeting from '@/components/Greeting'
 import Form from '@/components/User/Form'
 import Avatar from '@/components/Common/Avatar'
 
-import { computed, inject, unref, nextTick, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, inject, unref, ref, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { cuKey, snackKey } from '@/composables/keys'
 import { useIsCUOrAdmin } from '@/composables/user'
@@ -54,7 +54,6 @@ import _isEmpty from 'lodash/isEmpty'
 
 const { cu, updateCU } = inject(cuKey)
 const route = useRoute()
-const router = useRouter()
 const gravTypes = useGravTypes()
 
 const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
@@ -62,39 +61,44 @@ const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
 import { useFetch, usePut } from '@/snvue/fetch'
 
 const getPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/new`)
-const { state, isReady, isLoading, error } = useFetch(getPath)
+const { data, isFinished, isFetching } = useFetch(getPath).json()
+const user = ref(null)
 
-const user = computed( () => _get(unref(state), 'User', null))
+watch(
+  isFinished,
+  () => {
+    if(unref(isFinished)) {
+      user.value = _get(unref(data), 'User', null)
+    }
+  }
+)
 
-watch(state, () =>
+watch(data, () =>
   {
-    const error = _get(unref(state), 'Error', '')
+    const error = _get(unref(data), 'Error', '')
     if (!_isEmpty(error)) {
       router.push({name: 'Home'})
     }
   }
 )
 
-const loading = computed(() => _isEmpty(unref(user)))
-
 const putPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/new`)
-
-const redirect = computed(() => !unref(loading) && _isEmpty(unref(user)))
 
 // Inject snackbar
 const { snackbar, updateSnackbar } = inject(snackKey)
 
 function putData() {
-  const { state, isLoading, isReady, error } = usePut(putPath, user)
-  watch(isReady, () => update(state))
+  const { data } = usePut(putPath, user).json()
+  watch(data, () => update(data))
 }
 
 function update(response) {
   const cu = _get(unref(response), 'CU', {})
-  console.log(`cu: ${JSON.stringify(cu)}`)
   if (!_isEmpty(cu)) {
     updateCU(cu)
   }
+
+  user.value = _get(unref(response), 'User', user.value)
 
   const msg = _get(unref(response), 'Message', '')
   if (!_isEmpty(msg)) {

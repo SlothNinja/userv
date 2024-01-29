@@ -1,9 +1,9 @@
 <template>
   <v-navigation-drawer v-model='value'>
 
-    <v-list v-if='cu'>
+    <v-list v-if='isLoggedIn'>
       <v-list-item>
-        <UserButton v-if='cu' :user='cu' :size='32' />
+        <UserButton :user='cu' :size='32' />
       </v-list-item>
     </v-list>
 
@@ -15,13 +15,13 @@
 
       <v-list-item
           prepend-icon='mdi-account-details'
-          v-if="cu"
+          v-if="isLoggedIn"
           :to="{ name: 'sng-ugames', params: { status: 'running', type: 'all', uid: cuid} }"
           exact
           title='Your Games'
           />
 
-        <v-list-group v-if='cu' prepend-icon='mdi-pencil' >
+        <v-list-group v-if='isLoggedIn' prepend-icon='mdi-pencil' >
           <template v-slot:activator='{ props }'>
             <v-list-item v-bind='props' title='Create' />
           </template>
@@ -58,8 +58,8 @@
  
       <v-divider></v-divider>
 
-      <v-list-item v-if='!cu' title='Login' :to="{ name: 'Login' }" prependIcon='mdi-login' ></v-list-item>
-      <v-list-item v-if='cu' title='Logout' :to="{ name: 'Logout' }" prependIcon='mdi-logout' ></v-list-item>
+      <v-list-item v-if='!isLoggedIn' title='Login' :to="{ name: 'Login' }" prependIcon='mdi-login' ></v-list-item>
+      <v-list-item v-if='isLoggedIn' title='Logout' :to="{ name: 'Logout' }" prependIcon='mdi-logout' ></v-list-item>
     </v-list>
 
   </v-navigation-drawer>
@@ -70,6 +70,7 @@ import { computed, ref, onMounted, inject, unref } from 'vue'
 import UserButton from '@/components/Common/UserButton.vue'
 import { cuKey } from '@/composables/keys'
 import _get from 'lodash/get'
+import _isEmpty from 'lodash/isEmpty'
 import _map from 'lodash/map'
 
 const props = defineProps(['modelValue'])
@@ -112,7 +113,7 @@ const items = computed(
   }
 )
 
-const { cu, fetchCU } = inject(cuKey)
+const { cu } = inject(cuKey)
 const cuid = computed(() => (_get(unref(cu), 'ID', -1)))
 
 const name = computed( () => {
@@ -120,5 +121,7 @@ const name = computed( () => {
 })
 
 const open = ref( ['Create'] )
+
+const isLoggedIn = computed(() => !_isEmpty(unref(cu)))
 
 </script>

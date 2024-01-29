@@ -42,10 +42,11 @@ import Greeting from '@/components/Greeting'
 import Form from '@/components/User/Form'
 import Avatar from '@/components/Common/Avatar'
 
-import { computed, inject, unref, nextTick, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, inject, unref, ref, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { cuKey, snackKey } from '@/composables/keys'
+import { useIsCUOrAdmin } from '@/composables/user'
 import { useGravTypes } from '@/composables/gravatar'
 
 import _get from 'lodash/get'
@@ -54,26 +55,34 @@ import _isEmpty from 'lodash/isEmpty'
 const { cu, updateCU } = inject(cuKey)
 const route = useRoute()
 const gravTypes = useGravTypes()
-const id = computed(() => _get(route, 'params.id', 0))
 
-import { useIsCUOrAdmin } from '@/composables/user'
+const id = computed(() => _get(route, 'params.id', 0))
 const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
 
+// import { useFetch } from '@vueuse/core'
 import { useFetch, usePut } from '@/snvue/fetch'
 
 const getPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/${unref(id)}/json`)
-const { state, isReady, isLoading, error } = useFetch(getPath)
+const { data, isFinished, isFetching } = useFetch(getPath).json()
+const user = ref(null)
 
-const user = computed(
+watch(
+  isFinished,
   () => {
-    if (unref(id) != 0) {
-      return _get(unref(state), 'User', null)
+    if(unref(isFinished)) {
+      user.value = _get(unref(data), 'User', null)
     }
-    return null
   }
 )
 
-const loading = computed(() => _isEmpty(unref(user)))
+watch(data, () =>
+  {
+    const error = _get(unref(data), 'Error', '')
+    if (!_isEmpty(error)) {
+      router.push({name: 'Home'})
+    }
+  }
+)
 
 const putPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/${unref(id)}/update`)
 
@@ -81,8 +90,8 @@ const putPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/${un
 const { snackbar, updateSnackbar } = inject(snackKey)
 
 function putData() {
-  const { state, isLoading, isReady, error } = usePut(putPath, user)
-  watch(isReady, () => update(state))
+  const { data } = usePut(putPath, user).json()
+  watch(data, () => update(data))
 }
 
 function update(response) {
@@ -90,6 +99,9 @@ function update(response) {
   if (!_isEmpty(u)) {
     updateCU(u)
   }
+
+  user.value = _get(unref(response), 'User', user.value)
+
   const msg = _get(unref(response), 'Message', '')
   if (!_isEmpty(msg)) {
     updateSnackbar(msg)
