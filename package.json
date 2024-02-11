@@ -1,6 +1,6 @@
 {
   "name": "user-service",
-  "version": "1.0.30",
+  "version": "1.0.33",
   "private": true,
   "scripts": {
     "dev": "vite",
