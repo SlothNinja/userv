@@ -4,6 +4,8 @@ package client
 import (
 	"context"
 	"errors"
+	"log"
+	"log/slog"
 
 	"cloud.google.com/go/datastore"
 	"github.com/SlothNinja/sn/v3"
@@ -26,15 +28,15 @@ func (cl *Client) initUserDatastore(ctx context.Context) *Client {
 	var err error
 	cl.DS, err = datastore.NewClient(ctx, cl.GetProjectID())
 	if err != nil {
-		cl.Log.Panicf("unable to connect to user database: %v", err)
+		log.Panicf("unable to connect to user database: %v", err)
 	}
 	return cl
 }
 
 // AddRoutes addes routing for game.
 func (cl *Client) addRoutes() *Client {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	// New
 	cl.Router.GET(cl.GetPrefix()+"/user/new", cl.newUserHandler)

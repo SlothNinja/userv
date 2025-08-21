@@ -2,4 +2,4 @@
 
 cd ..
 #npm run watch
-yarn dev --host user.fake-slothninja.com --port 8088 --https true
+yarn dev --host localhost --port 8088 

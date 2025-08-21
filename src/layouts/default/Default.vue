@@ -1,55 +1,40 @@
 <template>
   <v-app>
-    <DefaultToolBar @toggleNav='toggleNav' />
+    <ToolBar :cu :size v-model:nav='nav' />
 
-    <DefaultView />
+    <View ref='container' :size v-model='cu' v-model:snackbar='snackbar' />
 
-    <DefaultFooter />
+    <Footer />
 
-    <DefaultNavDrawer v-model='nav' />
+    <NavDrawer v-model='nav' :cu />
 
-    <DefaultSnack v-model:open='snackbar.open' v-model:message='snackbar.message' />
+    <SnackBar v-model='snackbar' />
   </v-app>
 </template>
 
-<script setup>
-import DefaultToolBar from '@/layouts/default/ToolBar.vue'
-import DefaultNavDrawer from '@/layouts/default/NavDrawer.vue'
-import DefaultView from '@/layouts/default/View.vue'
-import DefaultFooter from '@/layouts/default/Footer.vue'
-import DefaultSnack from '@/layouts/default/SnackBar.vue'
-import { ref, provide } from 'vue'
-import { snackKey } from '@/composables/keys.js'
-// 
+<script setup lang='ts'>
+import ToolBar from '@/snvue/components/Default/ToolBar.vue'
+import NavDrawer from '@/snvue/components/Default/NavDrawer.vue'
+import View from '@/snvue/components/Default/View.vue'
+import Footer from '@/snvue/components/Default/Footer.vue'
+import SnackBar from '@/snvue/components/Default/SnackBar.vue'
+import { useElementSize, refThrottled, type MaybeElement } from '@vueuse/core'
+import { computed, Ref } from 'vue'
+import { User } from '@/snvue/composables/types'
+import { Snackbar } from '@/snvue/composables/types'
+import { ref } from 'vue'
+
+const cu = defineModel<User | null>({required: true })
 const nav = ref(false)
-const snackbar = ref({
-  message: '',
-  open: false,
-})
+const snackbar:Ref<Snackbar> = ref(new Snackbar)
 
-function updateSnackbar(msg) {
-  snackbar.value.message = msg
-  snackbar.value.open = true
-}
+const container = ref<MaybeElement>(null)
+const { width } = useElementSize(container)
 
-provide( snackKey, { snackbar, updateSnackbar } )
+const baseWidth = 1284.0
+const percentage = computed<number>(() => width.value / baseWidth)
 
-function toggleNav() {
-  nav.value = !nav.value
-}
-
-
-// function clearMessage () {
-//   console.log('clearMessage')
-//   if (_get(snackbar, 'value.open', false) == false) {
-//     snackbar.value.message = ''
-//   }
-// }
-
-// import { ref, inject } from 'vue'
-
-// const snackbar = inject(snackKey)
-
-// const open = ref(false)
+const bsize = 28
+const size = refThrottled(computed<number>(() => percentage.value * bsize), 50)
 
 </script>

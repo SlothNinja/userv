@@ -4,11 +4,11 @@
       <v-container>
         <v-row>
           <v-col cols='6'>
-            <Form v-if='user' v-model='user' :cu='cu' :loading='isFetching' create >
-              <v-row v-if='isCUOrAdmin'>
+            <Form v-if='user' v-model='user' :cu :loading='isFetching' :size create >
+              <v-row v-if='isAdminOrUser'>
                 <v-col>
                   <v-radio-group v-model='user.GravType' inline label='Gravatar'>
-                    <v-radio v-for='t in gravTypes' :key='t' :value='t' color='green'>
+                    <v-radio v-for='t in useGravTypes' :key='t' :value='t' color='green'>
                       <template v-slot:label>
                         <Avatar :hash='user.EmailHash' :size='48' :variant='t' />
                       </template>
@@ -16,9 +16,9 @@
                   </v-radio-group>
                 </v-col>
               </v-row>
-              <v-row v-if='isCUOrAdmin'>
+              <v-row v-if='isAdminOrUser'>
                 <v-col>
-                  <v-btn @click='putData' color='green' dark>Create</v-btn>
+                  <v-btn @click='create' color='green' dark>Create</v-btn>
                 </v-col>
                 <v-col class='text-xs-right'>
                   <v-btn :to="{name: 'Logout'}" color='green' dark>Cancel</v-btn>
@@ -36,73 +36,61 @@
   </v-container>
 </template>
 
-<script setup>
-import UserButton from '@/components/Common/UserButton'
-import Greeting from '@/components/Greeting'
-import Form from '@/components/User/Form'
-import Avatar from '@/components/Common/Avatar'
+<script setup lang='ts'>
+import Greeting from '@/components/Greeting.vue'
+import Form from '@/components/User/Form.vue'
+import Avatar from '@/snvue/components/Common/Avatar.vue'
 
-import { computed, inject, unref, ref, nextTick, watch } from 'vue'
+import { computed, ref, watch, Ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useIsAdminOrUser } from '@/snvue/composables/user'
+import { useGravTypes } from '@/snvue/composables/gravatar'
+import { useFetch, usePut } from '@/snvue/composables/fetch'
+import { useURLPath } from '@/composables/urlPaths'
+import { User } from '@/snvue/composables/types'
+import { Snackbar } from '@/snvue/composables/types'
+import { PathName } from '@/composables/types'
+import { UserResponse } from '@/composables/types'
+import { updateMessageOrError } from '@/snvue/composables/snackbar'
+import { useRouter } from 'vue-router'
 
-import { cuKey, snackKey } from '@/composables/keys'
-import { useIsCUOrAdmin } from '@/composables/user'
-import { useGravTypes } from '@/composables/gravatar'
+interface Props {
+  size: number
+}
+defineProps<Props>()
+const snackbar = defineModel<Snackbar>('snackbar', { required: true })
+const cu = defineModel<User | null>({required: true})
 
-import _get from 'lodash/get'
-import _isEmpty from 'lodash/isEmpty'
+const user:Ref<User | null> = ref(null)
 
-const { cu, updateCU } = inject(cuKey)
+const router = useRouter()
 const route = useRoute()
-const gravTypes = useGravTypes()
+const id = computed<string>(() => route.params.id as string)
 
-const isCUOrAdmin = computed(() => useIsCUOrAdmin(cu, user))
+const isAdminOrUser = computed(() => useIsAdminOrUser(cu.value, user.value))
+const { onFetchResponse, isFetching } = useFetch(useURLPath(PathName.GetNew))
+onFetchResponse(response => response.json().then((data:UserResponse) => update(data)))
 
-import { useFetch, usePut } from '@/snvue/fetch'
-
-const getPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/new`)
-const { data, isFinished, isFetching } = useFetch(getPath).json()
-const user = ref(null)
-
-watch(
-  isFinished,
-  () => {
-    if(unref(isFinished)) {
-      user.value = _get(unref(data), 'User', null)
-    }
-  }
-)
-
-watch(data, () =>
-  {
-    const error = _get(unref(data), 'Error', '')
-    if (!_isEmpty(error)) {
-      router.push({name: 'Home'})
-    }
-  }
-)
-
-const putPath = computed(() => `${import.meta.env.VITE_USER_BACKEND}sn/user/new`)
-
-// Inject snackbar
-const { snackbar, updateSnackbar } = inject(snackKey)
-
-function putData() {
-  const { data } = usePut(putPath, user).json()
-  watch(data, () => update(data))
+function create() {
+  const { onFetchResponse } = usePut(useURLPath(PathName.Create, id.value), { User: user.value })
+  onFetchResponse(response => response.json().then((data:UserResponse) => {
+    update(data)
+    router.push({name: 'Home'})
+  }))
 }
 
-function update(response) {
-  const cu = _get(unref(response), 'CU', {})
-  if (!_isEmpty(cu)) {
-    updateCU(cu)
+function update(
+  response?: UserResponse
+): void {
+  if (response === undefined) {
+    return
   }
-
-  user.value = _get(unref(response), 'User', user.value)
-
-  const msg = _get(unref(response), 'Message', '')
-  if (!_isEmpty(msg)) {
-    updateSnackbar(msg)
+  updateMessageOrError(snackbar, response)
+  if ("User" in response) {
+    user.value = response.User
   }
 }
+
+watch(user, () => cu.value = user.value)
+
 </script>

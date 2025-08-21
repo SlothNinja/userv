@@ -1,23 +1,27 @@
 <template>
-  <router-view />
+  <router-view v-model='cu' />
 </template>
 
-<script setup>
-/////////////////////////////////////////////////////
-// get and provide current user
-import { computed, provide, unref } from 'vue'
-import  { useFetch } from '@/snvue/fetch'
-import { cuKey } from '@/composables/keys'
-import _get from 'lodash/get'
+<script setup lang='ts'>
+import { ref, Ref } from 'vue'
+import { useURLPath } from '@/composables/urlPaths'
+import { useFetch } from '@/snvue/composables/fetch'
+import { User } from '@/snvue/composables/types'
+import { PathName } from '@/composables/types'
 
-const cuURL = `${import.meta.env.VITE_USER_BACKEND}sn/user/current`
-const { data } = useFetch(cuURL).json()
-const cu = computed(() => _get(unref(data), 'CU', {}))
+// Current User stuff
+type cuAndToken = { CU: User, fsTOKEN?: string }
+const { onFetchResponse } = useFetch(useURLPath(PathName.CurrentUser)).json()
+onFetchResponse(response => response.json().then((data:cuAndToken) => update(data)))
 
-function updateCU(user) {
-  cu.value = unref(user)
+const token:Ref<string> = ref('')
+const cu:Ref<User | null> = ref(null)
+
+function update(data:cuAndToken) {
+  cu.value = data.CU
+  if (data.fsTOKEN !== undefined) {
+    token.value = data.fsTOKEN
+  }
 }
 
-provide( cuKey, { cu, updateCU })
-////////////////////////////////////////////////////
 </script>

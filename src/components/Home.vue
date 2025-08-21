@@ -15,6 +15,6 @@
   </v-container>
 </template>
 
-<script setup>
+<script setup lang='ts'>
 import logoFull from '@/assets/slothninja_logo_fullsize.png'
 </script>

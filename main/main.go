@@ -2,37 +2,24 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 
 	"github.com/SlothNinja/sn/v3"
 	"github.com/SlothNinja/userv/main/client"
 )
 
 func main() {
-	if sn.IsProduction() {
-		cl := client.New(
-			context.Background(),
-			sn.WithLoggerID("user-service"),
-		)
-		defer func() {
-			if err := cl.Close(); err != nil {
-				sn.Warningf("error when closing client: %w", err)
-			}
-		}()
-
-		cl.Router.Run()
-		return
-	}
-
-	cl := client.New(
-		context.Background(),
-		sn.WithLoggerID("user-service"),
-		sn.WithCORSAllow("https://user.fake-slothninja.com:8088/*"),
-	)
+	ctx := context.Background()
+	cl := client.New(ctx)
 	defer func() {
 		if err := cl.Close(); err != nil {
-			sn.Warningf("error when closing client: %w", err)
+			slog.Warn(fmt.Sprintf("error when closing client: %w", err))
 		}
 	}()
 
-	cl.Router.RunTLS(":"+cl.GetPort(), "cert.pem", "key.pem")
+	if sn.IsProduction() {
+		cl.Router.Run()
+	}
+	cl.Router.Run(":" + cl.GetPort())
 }

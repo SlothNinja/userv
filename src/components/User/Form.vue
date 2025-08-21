@@ -59,30 +59,22 @@
   </template>
 </template>
 
-<script setup>
-import UserButton from '@/components/Common/UserButton.vue'
-import { useIsCUOrAdmin } from '@/composables/user'
-import { computed, unref } from 'vue'
-import _isEmpty from 'lodash/isEmpty'
+<script setup lang='ts'>
+import UserButton from '@/snvue/components/Common/UserButton.vue'
 
-const props = defineProps({
-  edit: Boolean,
-  create: Boolean,
+import { computed } from 'vue'
+import { useIsAdmin } from '@/snvue/composables/user'
+import { User } from '@/snvue/composables/types'
+
+interface Props {
+  cu: User | null
+  size: number
+  edit?: Boolean,
+  create?: Boolean,
   loading: Boolean,
-  modelValue: { type: Object, default: null },
-  cu : { type: Object, default: null },
-})
+}
+const props = defineProps<Props>()
 
-const emit = defineEmits(['update:modelValue'])
-
-const isCUOrAdmin = computed(() => useIsCUOrAdmin(props.cu, user))
-const user = computed({
-  get() {
-    return props.modelValue
-  },
-  set(value) {
-    emit('update:modelValue', value)
-  }
-})
-
+const user = defineModel<User>({required: true})
+const isCUOrAdmin = computed(() => (useIsAdmin(props.cu)) || (props.cu !== null && (props.cu.ID === user.value.ID)))
 </script>

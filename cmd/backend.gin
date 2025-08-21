@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+#SECRETS_PROJECT_ID=user-slothninja-games SECRETS_DS_HOST=user.fake-slothninja.com:8086 GOOGLE_CLOUD_PROJECT=user-slothninja-games USER_PROJECT_ID=user-slothninja-games DS_USER_HOST=user.fake-slothninja.com:8086 CLIENT_ID="435340145701-t5o50sjq7hsbilopgreobhvrv30e1tj4.apps.googleusercontent.com" CLIENT_SECRET="VF8xw04tTO99Uiz1n2vw-erq" PORT=8087 HOST=http://user.fake-slothninja.com:8087 DATASTORE_PROJECT_ID=user-slothninja-games DATASTORE_EMULATOR_HOST=user.fake-slothninja.com:8086 NODE_ENV=development gin -p 3007 -a 8087 -i -t ../ -d . run main.go
+
+cd ../main
+DATASTORE_EMULATOR_HOST=localhost:8086 GOOGLE_CLOUD_PROJECT=user-slothninja-games URL=localhost FE_PORT=8088 BE_PORT=8087 CLIENT_ID="435340145701-t5o50sjq7hsbilopgreobhvrv30e1tj4.apps.googleusercontent.com" CLIENT_SECRET="VF8xw04tTO99Uiz1n2vw-erq" PORT=$BE_PORT NODE_ENV=development gin -p 3007 -a 8087 -i -t ../ -d . run main.go

@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -35,16 +36,21 @@ func newUserKey(uid sn.UID) *datastore.Key {
 	return datastore.IDKey(uKind, int64(uid), userRootKey())
 }
 
-func newUser(uid sn.UID) sn.User {
-	return sn.User{ID: uid}
+func newUser(uid sn.UID) *sn.User {
+	return &sn.User{ID: uid}
 }
 
-func (cl *Client) updateUser(ctx *gin.Context, cu, u1, u2 sn.User) (sn.User, bool, error) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) updateUser(ctx *gin.Context, cu, u1, u2 *sn.User) (*sn.User, bool, error) {
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
+
+	sn.Debugf("cu: %#v", cu)
+	sn.Debugf("u1: %#v", u1)
+	sn.Debugf("u2: %#v", u2)
 
 	changed := false
-	if cu.Admin {
+	// If admin or newly created user
+	if cu.Admin || (cu.ID == 0 && u1.ID == 0) {
 		if u2.Email != "" && u2.Email != u1.Email {
 			hash, err := emailHash(u1.Email)
 			if err != nil {
@@ -82,7 +88,7 @@ func (cl *Client) updateUser(ctx *gin.Context, cu, u1, u2 sn.User) (sn.User, boo
 	return u1, changed, nil
 }
 
-func (cl *Client) updateUserName(ctx *gin.Context, u sn.User, n string) (sn.User, bool, error) {
+func (cl *Client) updateUserName(ctx *gin.Context, u *sn.User, n string) (*sn.User, bool, error) {
 	matcher := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9._%+\-]+$`)
 
 	switch {
@@ -125,8 +131,8 @@ func getUID(ctx *gin.Context, param string) (sn.UID, error) {
 
 func (cl *Client) userJSONHandler(uidParam string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		cl.Log.Debugf(msgEnter)
-		defer cl.Log.Debugf(msgExit)
+		slog.Debug(msgEnter)
+		defer slog.Debug(msgExit)
 
 		cu, err := cl.RequireLogin(ctx)
 		if err != nil {
@@ -156,8 +162,8 @@ func (cl *Client) userJSONHandler(uidParam string) gin.HandlerFunc {
 }
 
 func (cl *Client) newUserHandler(ctx *gin.Context) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	cu, err := cl.RequireLogin(ctx)
 	if err != nil {
@@ -165,19 +171,23 @@ func (cl *Client) newUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	u, err := cl.Session(ctx).GetNewUser()
+	slog.Debug(fmt.Sprintf("cu: %#v", cu))
+
+	u, err := cl.getNewUser(ctx)
 	if err != nil {
-		cl.Log.Errorf(err.Error())
+		slog.Error(err.Error())
 		sn.JErr(ctx, err)
 		return
 	}
+
+	slog.Debug(fmt.Sprintf("u: %#v", u))
 
 	u.EmailReminders = true
 	u.EmailNotifications = true
 	u.GravType = "monsterid"
 	hash, err := emailHash(u.Email)
 	if err != nil {
-		cl.Log.Warningf("email hash error: %v", err)
+		slog.Warn(fmt.Sprintf("email hash error: %v", err))
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
@@ -195,13 +205,13 @@ func (cl *Client) newUserHandler(ctx *gin.Context) {
 }
 
 func (cl *Client) createUserHandler(ctx *gin.Context) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	cu, u, err := cl.createUser(ctx)
 	if err != nil {
-		cl.Log.Warningf("cannot create user: %w", err)
-		ctx.Redirect(http.StatusSeeOther, cl.GetHome())
+		slog.Error(err.Error())
+		sn.JErr(ctx, fmt.Errorf("cannot create user: %w", err))
 		return
 	}
 
@@ -213,40 +223,44 @@ func (cl *Client) createUserHandler(ctx *gin.Context) {
 }
 
 // returns current user, created user, and error
-func (cl *Client) createUser(ctx *gin.Context) (sn.User, sn.User, error) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) createUser(ctx *gin.Context) (*sn.User, *sn.User, error) {
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	cu, err := cl.RequireLogin(ctx)
 	if err == nil && cu.ID != 0 {
-		cl.Log.Warningf("%s(%d) already has an account", cu.Name, cu.ID)
-		return sn.User{}, sn.User{}, err
+		slog.Warn(fmt.Sprintf("%s(%d) already has an account", cu.Name, cu.ID))
+		return nil, nil, err
 	}
 
-	token, ok := cl.Session(ctx).GetUserToken()
-	if !ok {
-		return sn.User{}, sn.User{}, errors.New("missing token")
+	token := cl.GetSessionToken(ctx)
+	if token == nil {
+		return nil, nil, sn.ErrNotLoggedIn
 	}
 
 	if token.ID != 0 {
-		// ctx.Redirect(http.StatusSeeOther, homePath)
-		return sn.User{}, sn.User{}, errors.New("user present, no need for new one")
+		return nil, nil, errors.New("user present, no need for new one")
 	}
+
+	obj := new(struct {
+		User *sn.User
+	})
+	err = ctx.ShouldBind(obj)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	sn.Debugf("obj.User: %#v", obj.User)
 
 	u := newUser(0)
-	err = ctx.ShouldBind(&u)
+	u, _, err = cl.updateUser(ctx, u, u, obj.User)
 	if err != nil {
-		return sn.User{}, sn.User{}, err
-	}
-
-	u, _, err = cl.updateUser(ctx, u, u, u)
-	if err != nil {
-		return sn.User{}, sn.User{}, err
+		return nil, nil, err
 	}
 
 	ks, err := cl.DS.AllocateIDs(ctx, []*datastore.Key{newUserKey(u.ID)})
 	if err != nil {
-		return sn.User{}, sn.User{}, err
+		return nil, nil, err
 	}
 
 	u.ID = sn.UID(ks[0].ID)
@@ -254,34 +268,32 @@ func (cl *Client) createUser(ctx *gin.Context) (sn.User, sn.User, error) {
 
 	t := time.Now()
 	oaid := genOAuthID(token.Sub)
+
 	oa := newOAuth(oaid)
 	oa.ID = u.ID
-
 	oa.UpdatedAt = t
 	oa.CreatedAt = t
+
 	u.UpdatedAt = t
 	u.CreatedAt = t
 	u.Joined = t
 
 	_, err = cl.DS.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
 		ks := []*datastore.Key{oa.Key, newUserKey(u.ID)}
-		es := []interface{}{&oa, &u}
+		es := []interface{}{oa, u}
 		_, err := tx.PutMulti(ks, es)
 		return err
 
 	})
 
 	if err != nil {
-		return sn.User{}, sn.User{}, err
+		return nil, nil, err
 	}
 
-	token.Data = u.Data
-	if token.ID == 0 {
-		token.ID = u.ID
-	}
-	err = cl.Session(ctx).SaveToken(token)
+	cl.SetSessionToken(ctx, u, token.Sub)
+	err = cl.SaveSession(ctx)
 	if err != nil {
-		return sn.User{}, sn.User{}, err
+		return nil, nil, err
 	}
 	return u, u, nil
 
@@ -289,8 +301,8 @@ func (cl *Client) createUser(ctx *gin.Context) (sn.User, sn.User, error) {
 
 func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		cl.Log.Debugf(msgEnter)
-		defer cl.Log.Debugf(msgExit)
+		slog.Debug(msgEnter)
+		defer slog.Debug(msgExit)
 
 		cu, err := cl.RequireLogin(ctx)
 		if err != nil {
@@ -318,15 +330,16 @@ func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 			}
 		}
 
-		obj := newUser(0)
-		err = ctx.ShouldBind(&obj)
+		obj := new(struct {
+			User *sn.User
+		})
+		err = ctx.ShouldBind(obj)
 		if err != nil {
 			sn.JErr(ctx, err)
 			return
 		}
 
-		cl.Log.Debugf("obj: %#v", obj)
-		u, changed, err := cl.updateUser(ctx, cu, u, obj)
+		u, changed, err := cl.updateUser(ctx, cu, u, obj.User)
 		if err != nil {
 			sn.JErr(ctx, err)
 			return
@@ -338,17 +351,16 @@ func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 		}
 
 		u.UpdatedAt = time.Now()
-		_, err = cl.DS.Put(ctx, newUserKey(u.ID), &u)
+		_, err = cl.DS.Put(ctx, newUserKey(u.ID), u)
 		if err != nil {
 			sn.JErr(ctx, err)
 			return
 		}
 
-		token, _ := cl.Session(ctx).GetUserToken()
-		token.ID = u.ID
-		token.Data = u.Data
+		token := cl.GetSessionToken(ctx)
+		cl.SetSessionToken(ctx, u, token.Sub)
 
-		err = cl.Session(ctx).SaveToken(token)
+		err = cl.SaveSession(ctx)
 		if err != nil {
 			sn.JErr(ctx, err)
 			return
@@ -363,16 +375,16 @@ func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 	}
 }
 
-func (cl *Client) getUser(ctx *gin.Context, uid sn.UID) (sn.User, error) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) getUser(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	return cl.get(ctx, uid)
 }
 
-func (cl *Client) get(ctx *gin.Context, uid sn.UID) (sn.User, error) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) get(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	u, err := cl.mcGet(uid)
 	if err == nil {
@@ -382,29 +394,29 @@ func (cl *Client) get(ctx *gin.Context, uid sn.UID) (sn.User, error) {
 	return cl.dsGet(ctx, uid)
 }
 
-func (cl *Client) mcGet(uid sn.UID) (sn.User, error) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) mcGet(uid sn.UID) (*sn.User, error) {
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	if uid == 0 {
-		return sn.User{}, ErrMissingUID
+		return nil, ErrMissingUID
 	}
 
 	item, found := cl.Cache.Get(newUserKey(uid).Encode())
 	if !found {
-		return sn.User{}, ErrUserNotFound
+		return nil, ErrUserNotFound
 	}
 
-	u, ok := item.(sn.User)
+	u, ok := item.(*sn.User)
 	if !ok {
-		return sn.User{}, ErrInvalidCache
+		return nil, ErrInvalidCache
 	}
 	return u, nil
 }
 
-func (cl *Client) mcGetMulti(uids []sn.UID) ([]sn.User, error) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) mcGetMulti(uids []sn.UID) ([]*sn.User, error) {
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	l := len(uids)
 	if l == 0 {
@@ -412,7 +424,7 @@ func (cl *Client) mcGetMulti(uids []sn.UID) ([]sn.User, error) {
 	}
 
 	me := make(datastore.MultiError, l)
-	us := make([]sn.User, l)
+	us := make([]*sn.User, l)
 	isNil := true
 	for i, k := range uids {
 		us[i], me[i] = cl.mcGet(k)
@@ -427,34 +439,35 @@ func (cl *Client) mcGetMulti(uids []sn.UID) ([]sn.User, error) {
 	return us, me
 }
 
-func (cl *Client) dsGet(ctx *gin.Context, uid sn.UID) (sn.User, error) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) dsGet(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	if uid == 0 {
-		return sn.User{}, ErrMissingUID
+		return nil, ErrMissingUID
 	}
 
-	var u sn.User
-	err := cl.DS.Get(ctx, newUserKey(uid), &u)
+	u := new(sn.User)
+	err := cl.DS.Get(ctx, newUserKey(uid), u)
 	if err != nil {
-		return sn.User{}, err
+		slog.Debug(err.Error())
+		return nil, err
 	}
 	u.ID = uid
 	cl.cacheUser(u)
 	return u, nil
 }
 
-func (cl *Client) dsGetMulti(ctx *gin.Context, uids []sn.UID) ([]sn.User, error) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) dsGetMulti(ctx *gin.Context, uids []sn.UID) ([]*sn.User, error) {
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	l := len(uids)
 	if l == 0 {
 		return nil, ErrMissingUID
 	}
 
-	us := make([]sn.User, l)
+	us := make([]*sn.User, l)
 	ks := pie.Map(uids, func(uid sn.UID) *datastore.Key { return newUserKey(uid) })
 	err := cl.DS.GetMulti(ctx, ks, us)
 	if err != nil {
@@ -466,9 +479,9 @@ func (cl *Client) dsGetMulti(ctx *gin.Context, uids []sn.UID) ([]sn.User, error)
 	return us, nil
 }
 
-func (cl *Client) cacheUser(u sn.User) {
-	cl.Log.Debugf(msgEnter)
-	defer cl.Log.Debugf(msgExit)
+func (cl *Client) cacheUser(u *sn.User) {
+	slog.Debug(msgEnter)
+	defer slog.Debug(msgExit)
 
 	cl.Cache.SetDefault(newUserKey(u.ID).Encode(), u)
 }
