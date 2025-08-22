@@ -7,7 +7,7 @@ toolchain go1.24.5
 require (
 	cloud.google.com/go/datastore v1.20.0
 	firebase.google.com/go/v4 v4.18.0
-	github.com/SlothNinja/sn/v3 v3.0.17
+	github.com/SlothNinja/sn/v3 v3.0.18
 	github.com/elliotchance/pie/v2 v2.9.1
 	github.com/gin-gonic/gin v1.10.1
 	github.com/gofrs/uuid v4.4.0+incompatible

@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -131,8 +130,8 @@ func getUID(ctx *gin.Context, param string) (sn.UID, error) {
 
 func (cl *Client) userJSONHandler(uidParam string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		slog.Debug(msgEnter)
-		defer slog.Debug(msgExit)
+		sn.Debugf(msgEnter)
+		defer sn.Debugf(msgExit)
 
 		cu, err := cl.RequireLogin(ctx)
 		if err != nil {
@@ -162,8 +161,8 @@ func (cl *Client) userJSONHandler(uidParam string) gin.HandlerFunc {
 }
 
 func (cl *Client) newUserHandler(ctx *gin.Context) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	cu, err := cl.RequireLogin(ctx)
 	if err != nil {
@@ -171,23 +170,19 @@ func (cl *Client) newUserHandler(ctx *gin.Context) {
 		return
 	}
 
-	slog.Debug(fmt.Sprintf("cu: %#v", cu))
-
 	u, err := cl.getNewUser(ctx)
 	if err != nil {
-		slog.Error(err.Error())
+		sn.Errorf("%v", err.Error())
 		sn.JErr(ctx, err)
 		return
 	}
-
-	slog.Debug(fmt.Sprintf("u: %#v", u))
 
 	u.EmailReminders = true
 	u.EmailNotifications = true
 	u.GravType = "monsterid"
 	hash, err := emailHash(u.Email)
 	if err != nil {
-		slog.Warn(fmt.Sprintf("email hash error: %v", err))
+		sn.Warnf("email hash error: %v", err)
 		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
@@ -205,12 +200,12 @@ func (cl *Client) newUserHandler(ctx *gin.Context) {
 }
 
 func (cl *Client) createUserHandler(ctx *gin.Context) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	cu, u, err := cl.createUser(ctx)
 	if err != nil {
-		slog.Error(err.Error())
+		sn.Errorf("%v", err.Error())
 		sn.JErr(ctx, fmt.Errorf("cannot create user: %w", err))
 		return
 	}
@@ -229,7 +224,7 @@ func (cl *Client) createUser(ctx *gin.Context) (*sn.User, *sn.User, error) {
 
 	cu, err := cl.RequireLogin(ctx)
 	if err == nil && cu.ID != 0 {
-		slog.Warn(fmt.Sprintf("%s(%d) already has an account", cu.Name, cu.ID))
+		sn.Warnf("%s(%d) already has an account", cu.Name, cu.ID)
 		return nil, nil, err
 	}
 
@@ -291,8 +286,7 @@ func (cl *Client) createUser(ctx *gin.Context) (*sn.User, *sn.User, error) {
 	}
 
 	cl.SetSessionToken(ctx, u, token.Sub)
-	err = cl.SaveSession(ctx)
-	if err != nil {
+	if err := cl.SaveSession(ctx); err != nil {
 		return nil, nil, err
 	}
 	return u, u, nil
@@ -301,8 +295,8 @@ func (cl *Client) createUser(ctx *gin.Context) (*sn.User, *sn.User, error) {
 
 func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		slog.Debug(msgEnter)
-		defer slog.Debug(msgExit)
+		sn.Debugf(msgEnter)
+		defer sn.Debugf(msgExit)
 
 		cu, err := cl.RequireLogin(ctx)
 		if err != nil {
@@ -360,8 +354,7 @@ func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 		token := cl.GetSessionToken(ctx)
 		cl.SetSessionToken(ctx, u, token.Sub)
 
-		err = cl.SaveSession(ctx)
-		if err != nil {
+		if err := cl.SaveSession(ctx); err != nil {
 			sn.JErr(ctx, err)
 			return
 		}
@@ -376,15 +369,15 @@ func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
 }
 
 func (cl *Client) getUser(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	return cl.get(ctx, uid)
 }
 
 func (cl *Client) get(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	u, err := cl.mcGet(uid)
 	if err == nil {
@@ -395,8 +388,8 @@ func (cl *Client) get(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
 }
 
 func (cl *Client) mcGet(uid sn.UID) (*sn.User, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	if uid == 0 {
 		return nil, ErrMissingUID
@@ -415,8 +408,8 @@ func (cl *Client) mcGet(uid sn.UID) (*sn.User, error) {
 }
 
 func (cl *Client) mcGetMulti(uids []sn.UID) ([]*sn.User, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	l := len(uids)
 	if l == 0 {
@@ -440,8 +433,8 @@ func (cl *Client) mcGetMulti(uids []sn.UID) ([]*sn.User, error) {
 }
 
 func (cl *Client) dsGet(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	if uid == 0 {
 		return nil, ErrMissingUID
@@ -450,7 +443,7 @@ func (cl *Client) dsGet(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
 	u := new(sn.User)
 	err := cl.DS.Get(ctx, newUserKey(uid), u)
 	if err != nil {
-		slog.Debug(err.Error())
+		sn.Warnf("%v", err.Error())
 		return nil, err
 	}
 	u.ID = uid
@@ -459,8 +452,8 @@ func (cl *Client) dsGet(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
 }
 
 func (cl *Client) dsGetMulti(ctx *gin.Context, uids []sn.UID) ([]*sn.User, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	l := len(uids)
 	if l == 0 {
@@ -480,8 +473,8 @@ func (cl *Client) dsGetMulti(ctx *gin.Context, uids []sn.UID) ([]*sn.User, error
 }
 
 func (cl *Client) cacheUser(u *sn.User) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	cl.Cache.SetDefault(newUserKey(u.ID).Encode(), u)
 }

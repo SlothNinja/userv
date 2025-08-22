@@ -2,8 +2,6 @@ package client
 
 import (
 	"errors"
-	"fmt"
-	"log/slog"
 
 	"github.com/SlothNinja/sn/v3"
 	"github.com/gin-gonic/gin"
@@ -24,7 +22,6 @@ func (cl *Client) setSessionState(ctx *gin.Context, state string) {
 
 func (cl *Client) getSessionState(ctx *gin.Context) string {
 	state, ok := cl.Session(ctx).Get(stateKey).(string)
-	slog.Debug(fmt.Sprintf("state: %v, statekey: %v, ok: %v", state, stateKey, ok))
 	if !ok {
 		return ""
 	}

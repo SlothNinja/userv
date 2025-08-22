@@ -21,7 +21,7 @@
                   <v-btn @click='putData' color='green' dark>Update</v-btn>
                 </v-col>
                 <v-col class='text-xs-right'>
-                  <v-btn :to="{name: 'User', params: { id: $route.params.id }}" color='green' dark>Cancel</v-btn>
+                  <v-btn @click='cancel' color='green' dark>Cancel</v-btn>
                 </v-col>
               </v-row>
             </Form>
@@ -41,8 +41,6 @@ import Greeting from '@/components/Greeting.vue'
 import Form from '@/components/User/Form.vue'
 import Avatar from '@/snvue/components/Common/Avatar.vue'
 
-import { UserResponse } from '@/composables/types'
-
 import { computed, ref, Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -54,9 +52,8 @@ import { PathName } from '@/composables/types'
 import { useIsAdminOrUser } from '@/snvue/composables/user'
 import { Snackbar } from '@/snvue/composables/types'
 import { updateMessageOrError } from '@/snvue/composables/snackbar'
-
-import _get from 'lodash/get'
-import _isEmpty from 'lodash/isEmpty'
+import { updateUser, updateCU } from '@/composables/user'
+import { UserResponse, CUResponse } from '@/composables/types'
 
 interface Props {
   size: number
@@ -71,33 +68,29 @@ const id = computed<string>(() => route.params.id as string)
 
 const router = useRouter()
 const isAdminOrUser = computed<boolean>(() => useIsAdminOrUser(cu.value, user.value))
+const loading = computed<boolean>(() => user === null)
 
 const { onFetchResponse } = useFetch(useURLPath(PathName.Edit, id.value))
-onFetchResponse(response => response.json().then((data:UserResponse) => update(data)))
+onFetchResponse(response => response.json().then((data:UserResponse) => {
+  updateUser(cu, user, data)
+  updateMessageOrError(snackbar, data)
+}))
 
 function putData() {
-  console.log(`user: ${JSON.stringify(user.value)}`)
   const { onFetchResponse } = usePut(useURLPath(PathName.Update, id.value), { User: user.value })
   onFetchResponse(response => response.json().then((data:UserResponse) => {
-    update(data)
+    updateUser(cu, user, data)
+    updateMessageOrError(snackbar, data)
     router.push({name: 'User', params: { id: id.value}})
   }))
 }
 
-function update(
-  response?: UserResponse
-): void {
-  if (response === undefined) {
-    return
-  }
-  updateMessageOrError(snackbar, response)
-  if ("User" in response) {
-    user.value = response.User
-    if (cu.value !== null && (cu.value.ID === user.value?.ID)) {
-      cu.value = user.value
-    }
-  }
+function cancel() {
+  const { onFetchResponse } = useFetch(useURLPath(PathName.CurrentUser))
+  onFetchResponse(response => response.json().then((data:CUResponse) => {
+    updateCU(cu, data)
+    updateMessageOrError(snackbar, data)
+    router.push({name: 'User', params: { id: id.value}})
+  }))
 }
-
-const loading = computed<boolean>(() => user === null)
 </script>

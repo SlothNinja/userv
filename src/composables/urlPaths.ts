@@ -16,6 +16,8 @@ export function useURLPath(
       return url + '/sn/user/' + id + '/json'
     case PathName.Edit:
       return url + '/sn/user/' + id + '/json'
+    case PathName.AsUser:
+      return url + '/sn/user/' + id + '/as'
     case PathName.Update:
       return url + '/sn/user/' + id + '/update'
     default:

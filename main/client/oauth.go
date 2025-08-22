@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -37,8 +36,10 @@ func getRedirectionPath(ctx *gin.Context) (string, bool) {
 
 func (cl *Client) login(path string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		sn.Debugf(msgEnter)
+		defer sn.Debugf(msgExit)
+
 		state := randToken(tokenLength)
-		slog.Debug(fmt.Sprintf("SetSessionState: %v", state))
 		cl.setSessionState(ctx, state)
 
 		redirect, found := getRedirectionPath(ctx)
@@ -48,15 +49,15 @@ func (cl *Client) login(path string) gin.HandlerFunc {
 		cl.setSessionRedirect(ctx, redirect)
 		err := cl.SaveSession(ctx)
 		if err != nil {
-			slog.Warn(fmt.Sprintf("unable to save session: %v", err))
+			sn.Warnf("unable to save session: %v", err)
 		}
 		ctx.Redirect(http.StatusSeeOther, cl.getLoginURL(path, state))
 	}
 }
 
 func (cl *Client) logout(ctx *gin.Context) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	// get redirection path from session before clearing
 	path, pathFound := getRedirectionPath(ctx)
@@ -64,7 +65,7 @@ func (cl *Client) logout(ctx *gin.Context) {
 	cl.ClearSession(ctx)
 	err := cl.SaveSession(ctx)
 	if err != nil {
-		slog.Warn(fmt.Sprintf("unable to save session: %v", err))
+		sn.Warnf("unable to save session: %v", err)
 	}
 
 	if pathFound {
@@ -92,7 +93,6 @@ func (cl *Client) oauth2Config(path string, scopes ...string) *oauth2.Config {
 		redirectURL = fmt.Sprintf("http://%s:%s/%s", cl.GetBackEndURL(), cl.GetBackEndPort(), strings.TrimPrefix(path, "/"))
 	}
 
-	slog.Debug(fmt.Sprintf("redirectURL: %v", redirectURL))
 	return &oauth2.Config{
 		ClientID:     os.Getenv("CLIENT_ID"),
 		ClientSecret: os.Getenv("CLIENT_SECRET"),
@@ -148,8 +148,8 @@ func newOAuth(id string) *oauth {
 }
 
 func (cl *Client) redirectPathFrom(ctx *gin.Context) string {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	retrievedPath := cl.getSessionRedirect(ctx)
 	bs, err := base64.StdEncoding.DecodeString(retrievedPath)
@@ -161,8 +161,8 @@ func (cl *Client) redirectPathFrom(ctx *gin.Context) string {
 
 // returns whether user present in database and any error resulting from trying to create session
 func (cl *Client) loginSessionByOAuthSub(ctx *gin.Context, sub string) (bool, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	oaid := genOAuthID(sub)
 	oa, err := cl.getOAuth(ctx, oaid)
@@ -183,8 +183,8 @@ func (cl *Client) loginSessionByOAuthSub(ctx *gin.Context, sub string) (bool, er
 
 // returns whether user present in datastore and any error resulting for trying to create session
 func (cl *Client) loginSessionByEmailAndSub(ctx *gin.Context, email, sub string) (bool, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	u, err := cl.getByEmail(ctx, email)
 	if err != nil {
@@ -200,13 +200,13 @@ func (cl *Client) loginSessionByEmailAndSub(ctx *gin.Context, email, sub string)
 	}
 
 	cl.SetSessionToken(ctx, u, sub)
-	return true, nil
+	return true, cl.SaveSession(ctx)
 }
 
 // returns error resulting for trying to create session
 func (cl *Client) loginSessionNewUser(ctx *gin.Context, email, sub string) error {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	u := newUser(0)
 	u.Name = strings.Split(email, "@")[0]
@@ -219,44 +219,44 @@ func (cl *Client) loginSessionNewUser(ctx *gin.Context, email, sub string) error
 
 func (cl *Client) auth(authPath string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		slog.Debug(msgEnter)
-		defer slog.Debug(msgExit)
+		sn.Debugf(msgEnter)
+		defer sn.Debugf(msgExit)
 
 		uInfo, err := cl.getUInfo(ctx, authPath)
 		if err != nil {
-			slog.Error(err.Error())
+			sn.Errorf("%v", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		if userExists, err := cl.loginSessionByOAuthSub(ctx, uInfo.Sub); userExists && err != nil {
-			slog.Error(err.Error())
+		userExists, err := cl.loginSessionByOAuthSub(ctx, uInfo.Sub)
+		if userExists && err != nil {
+			sn.Errorf("%v", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		} else if err == nil {
 			ctx.Redirect(http.StatusSeeOther, cl.redirectPathFrom(ctx))
 			return
-		} else {
-			slog.Debug(err.Error())
 		}
+		sn.Warnf("%v", err.Error())
 
 		// OAuth sub not associated with UID in datastore
 		// Check to see if other entities exist for same email address.
 		// If so, use old entities for user
-		if userExists, err := cl.loginSessionByEmailAndSub(ctx, uInfo.Email, uInfo.Sub); userExists && err != nil {
-			slog.Error(err.Error())
+		userExists, err = cl.loginSessionByEmailAndSub(ctx, uInfo.Email, uInfo.Sub)
+		if userExists && err != nil {
+			sn.Errorf("%v", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		} else if err == nil {
 			ctx.Redirect(http.StatusSeeOther, cl.redirectPathFrom(ctx))
 			return
-		} else {
-			slog.Debug(err.Error())
 		}
+		sn.Warnf("%v", err.Error())
 
 		// Create New User
 		if err := cl.loginSessionNewUser(ctx, uInfo.Email, uInfo.Sub); err != nil {
-			slog.Error(err.Error())
+			sn.Errorf("%v", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -270,8 +270,8 @@ func (cl *Client) auth(authPath string) gin.HandlerFunc {
 }
 
 func getFBToken(ctx *gin.Context, uid sn.UID) (string, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgEnter)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgEnter)
 
 	app, err := firebase.NewApp(ctx, nil)
 	if err != nil {
@@ -291,43 +291,51 @@ func getFBToken(ctx *gin.Context, uid sn.UID) (string, error) {
 }
 
 func (cl *Client) as(ctx *gin.Context) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
-	_, err := cl.RequireAdmin(ctx)
+	cu, err := cl.RequireAdmin(ctx)
 	if err != nil {
-		slog.Error(err.Error())
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		sn.JErr(ctx, err)
 		return
 	}
 
 	id, err := strconv.ParseInt(ctx.Param("uid"), 10, 64)
 	if err != nil {
-		slog.Error(err.Error())
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		sn.JErr(ctx, err)
+		return
+	}
+
+	if cu.ID == sn.UID(id) {
+		msg := fmt.Sprintf("you are already operating as %q", cu.Name)
+		ctx.JSON(http.StatusOK, gin.H{"CU": cu, "Message": msg})
 		return
 	}
 
 	u, err := cl.getUser(ctx, sn.UID(id))
 	if err != nil {
-		slog.Error(err.Error())
-		ctx.AbortWithStatus(http.StatusInternalServerError)
+		sn.JErr(ctx, err)
 		return
 	}
 
+	sn.Debugf("u: %#v", u)
+
 	cl.SetSessionToken(ctx, u, "")
-	redirect := fmt.Sprintf("https://%s:%s/user/new", cl.GetFrontEndURL(), cl.GetFrontEndPort())
-	ctx.Redirect(http.StatusSeeOther, redirect)
+	if err := cl.SaveSession(ctx); err != nil {
+		sn.JErr(ctx, err)
+		return
+	}
+	msg := fmt.Sprintf("you are now operating as %q", u.Name)
+	ctx.JSON(http.StatusOK, gin.H{"CU": u, "Message": msg})
+	return
 }
 
 func (cl *Client) getUInfo(ctx *gin.Context, path string) (oaInfo, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	// Handle the exchange code to initiate a transport.
 	retrievedState := cl.getSessionState(ctx)
-	slog.Debug(fmt.Sprintf("retrievedState: %#v", retrievedState))
-	slog.Debug(fmt.Sprintf("Query: %v", ctx.Query("state")))
 	if retrievedState != ctx.Query("state") {
 		return oaInfo{}, fmt.Errorf("Invalid session state: %s", retrievedState)
 	}
@@ -364,8 +372,8 @@ func (cl *Client) getOAuth(ctx *gin.Context, id string) (*oauth, error) {
 }
 
 func (cl *Client) getOAuthByKey(ctx *gin.Context, k *datastore.Key) (*oauth, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	oauth, found := cl.getCachedOAuth(k)
 	if found {
@@ -407,8 +415,8 @@ func (cl *Client) cacheOAuth(auth *oauth) {
 }
 
 func (cl *Client) getByEmail(ctx *gin.Context, email string) (*sn.User, error) {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	email = strings.ToLower(strings.TrimSpace(email))
 	q := datastore.NewQuery(uKind).

@@ -1,11 +1,10 @@
-// Client provides a user service client
+// Package client provides a user service client
 package client
 
 import (
 	"context"
 	"errors"
 	"log"
-	"log/slog"
 
 	"cloud.google.com/go/datastore"
 	"github.com/SlothNinja/sn/v3"
@@ -14,11 +13,13 @@ import (
 const msgEnter = "Entering"
 const msgExit = "Exiting"
 
+// Client represents user service client
 type Client struct {
 	*sn.Client
 	DS *datastore.Client
 }
 
+// New returns a user service client
 func New(ctx context.Context, opts ...sn.Option) *Client {
 	cl := &Client{Client: sn.NewClient(ctx, opts...)}
 	return cl.initUserDatastore(ctx).addRoutes()
@@ -35,8 +36,8 @@ func (cl *Client) initUserDatastore(ctx context.Context) *Client {
 
 // AddRoutes addes routing for game.
 func (cl *Client) addRoutes() *Client {
-	slog.Debug(msgEnter)
-	defer slog.Debug(msgExit)
+	sn.Debugf(msgEnter)
+	defer sn.Debugf(msgExit)
 
 	// New
 	cl.Router.GET(cl.GetPrefix()+"/user/new", cl.newUserHandler)
@@ -46,11 +47,10 @@ func (cl *Client) addRoutes() *Client {
 
 	// Update
 	cl.Router.PUT(cl.GetPrefix()+"/user/:uid/update", cl.updateUserHandler("uid"))
+	cl.Router.PUT(cl.GetPrefix()+"/user/:uid/as", cl.as)
 
 	// Get
 	cl.Router.GET(cl.GetPrefix()+"/user/:uid/json", cl.userJSONHandler("uid"))
-
-	cl.Router.GET(cl.GetPrefix()+"/user/:uid/as", cl.as)
 
 	cl.Router.GET(cl.GetPrefix()+"/user/login", cl.login(cl.GetPrefix()+"/user/auth"))
 
@@ -61,6 +61,7 @@ func (cl *Client) addRoutes() *Client {
 	return cl
 }
 
+// Close closes the user service client
 func (cl *Client) Close() error {
 	err1 := cl.Client.Close()
 	err2 := cl.DS.Close()
