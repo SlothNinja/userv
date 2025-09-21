@@ -1,5 +1,4 @@
 // Plugins
-import { VitePWA } from 'vite-plugin-pwa';
 import checker from 'vite-plugin-checker'
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'

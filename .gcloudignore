@@ -36,8 +36,10 @@ public/
 userv
 main/gin-bin
 main/main
+main/tmp
 db
 backend
+*.pem
 
 # Hidden
 .*

@@ -34,3 +34,4 @@ backend
 src/components/lib
 main/main
 main/tmp
+yarn.lock
