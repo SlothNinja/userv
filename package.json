@@ -12,7 +12,7 @@
   "dependencies": {
     "@mdi/font": "7.4.47",
     "@vueuse/core": "^13.9.0",
-    "@vueuse/firebase": "^14.0.0-beta.1",
+    "@vueuse/firebase": "^14.0.0-alpha.0",
     "core-js": "^3.45.1",
     "firebase": "^12.3.0",
     "lodash": "^4.17.21",
