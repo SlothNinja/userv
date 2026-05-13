@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
-	firebase "firebase.google.com/go/v4"
 	"github.com/SlothNinja/sn/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -30,14 +29,10 @@ const (
 	root        = "root"
 )
 
-func getRedirectionPath(ctx *gin.Context) (string, bool) {
-	return ctx.GetQuery("redirect")
-}
-
 func (cl *Client) login(path string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		sn.Debugf(msgEnter)
-		defer sn.Debugf(msgExit)
+		sn.Debugf(ctx, msgEnter)
+		defer sn.Debugf(ctx, msgExit)
 
 		state := randToken(tokenLength)
 		cl.setSessionState(ctx, state)
@@ -49,15 +44,15 @@ func (cl *Client) login(path string) gin.HandlerFunc {
 		cl.setSessionRedirect(ctx, redirect)
 		err := cl.SaveSession(ctx)
 		if err != nil {
-			sn.Warnf("unable to save session: %v", err)
+			sn.Warnf(ctx, "unable to save session: %v", err)
 		}
 		ctx.Redirect(http.StatusSeeOther, cl.getLoginURL(path, state))
 	}
 }
 
 func (cl *Client) logout(ctx *gin.Context) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	// get redirection path from session before clearing
 	path, pathFound := getRedirectionPath(ctx)
@@ -65,7 +60,7 @@ func (cl *Client) logout(ctx *gin.Context) {
 	cl.ClearSession(ctx)
 	err := cl.SaveSession(ctx)
 	if err != nil {
-		sn.Warnf("unable to save session: %v", err)
+		sn.Warnf(ctx, "unable to save session: %v", err)
 	}
 
 	if pathFound {
@@ -74,6 +69,10 @@ func (cl *Client) logout(ctx *gin.Context) {
 	}
 
 	ctx.Redirect(http.StatusSeeOther, cl.GetHome())
+}
+
+func getRedirectionPath(ctx *gin.Context) (string, bool) {
+	return ctx.GetQuery("redirect")
 }
 
 func randToken(length int) string {
@@ -148,8 +147,8 @@ func newOAuth(id string) *oauth {
 }
 
 func (cl *Client) redirectPathFrom(ctx *gin.Context) string {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	retrievedPath := cl.getSessionRedirect(ctx)
 	bs, err := base64.StdEncoding.DecodeString(retrievedPath)
@@ -161,8 +160,8 @@ func (cl *Client) redirectPathFrom(ctx *gin.Context) string {
 
 // returns whether user present in database and any error resulting from trying to create session
 func (cl *Client) loginSessionByOAuthSub(ctx *gin.Context, sub string) (bool, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	oaid := genOAuthID(sub)
 	oa, err := cl.getOAuth(ctx, oaid)
@@ -170,7 +169,7 @@ func (cl *Client) loginSessionByOAuthSub(ctx *gin.Context, sub string) (bool, er
 		return false, err
 	}
 
-	// Succesfully pulled uid from datastore using OAuth Sub
+	// Successfully pulled uid from datastore using OAuth Sub
 	u, err := cl.getUser(ctx, oa.ID)
 	if err != nil {
 		return false, err
@@ -183,8 +182,8 @@ func (cl *Client) loginSessionByOAuthSub(ctx *gin.Context, sub string) (bool, er
 
 // returns whether user present in datastore and any error resulting for trying to create session
 func (cl *Client) loginSessionByEmailAndSub(ctx *gin.Context, email, sub string) (bool, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	u, err := cl.getByEmail(ctx, email)
 	if err != nil {
@@ -205,8 +204,8 @@ func (cl *Client) loginSessionByEmailAndSub(ctx *gin.Context, email, sub string)
 
 // returns error resulting for trying to create session
 func (cl *Client) loginSessionNewUser(ctx *gin.Context, email, sub string) error {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	u := newUser(0)
 	u.Name = strings.Split(email, "@")[0]
@@ -219,44 +218,44 @@ func (cl *Client) loginSessionNewUser(ctx *gin.Context, email, sub string) error
 
 func (cl *Client) auth(authPath string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		sn.Debugf(msgEnter)
-		defer sn.Debugf(msgExit)
+		sn.Debugf(ctx, msgEnter)
+		defer sn.Debugf(ctx, msgExit)
 
 		uInfo, err := cl.getUInfo(ctx, authPath)
 		if err != nil {
-			sn.Errorf("%v", err.Error())
+			sn.Errorf(ctx, "%v", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
 		userExists, err := cl.loginSessionByOAuthSub(ctx, uInfo.Sub)
 		if userExists && err != nil {
-			sn.Errorf("%v", err.Error())
+			sn.Errorf(ctx, "%v", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		} else if err == nil {
 			ctx.Redirect(http.StatusSeeOther, cl.redirectPathFrom(ctx))
 			return
 		}
-		sn.Warnf("%v", err.Error())
+		sn.Warnf(ctx, "%v", err.Error())
 
 		// OAuth sub not associated with UID in datastore
 		// Check to see if other entities exist for same email address.
 		// If so, use old entities for user
 		userExists, err = cl.loginSessionByEmailAndSub(ctx, uInfo.Email, uInfo.Sub)
 		if userExists && err != nil {
-			sn.Errorf("%v", err.Error())
+			sn.Errorf(ctx, "%v", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		} else if err == nil {
 			ctx.Redirect(http.StatusSeeOther, cl.redirectPathFrom(ctx))
 			return
 		}
-		sn.Warnf("%v", err.Error())
+		sn.Warnf(ctx, "%v", err.Error())
 
 		// Create New User
 		if err := cl.loginSessionNewUser(ctx, uInfo.Email, uInfo.Sub); err != nil {
-			sn.Errorf("%v", err.Error())
+			sn.Errorf(ctx, "%v", err.Error())
 			ctx.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
@@ -269,30 +268,30 @@ func (cl *Client) auth(authPath string) gin.HandlerFunc {
 	}
 }
 
-func getFBToken(ctx *gin.Context, uid sn.UID) (string, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgEnter)
-
-	app, err := firebase.NewApp(ctx, nil)
-	if err != nil {
-		return "", fmt.Errorf("error initializing app: %w", err)
-	}
-	client, err := app.Auth(ctx)
-	if err != nil {
-		return "", fmt.Errorf("error getting Auth client: %w", err)
-	}
-
-	token, err := client.CustomToken(ctx, fmt.Sprintf("%d", uid))
-	if err != nil {
-		return "", fmt.Errorf("error minting custom token: %w", err)
-	}
-
-	return token, err
-}
+// func getFBToken(ctx *gin.Context, uid sn.UID) (string, error) {
+// 	sn.Debugf(msgEnter)
+// 	defer sn.Debugf(msgEnter)
+//
+// 	app, err := firebase.NewApp(ctx, nil)
+// 	if err != nil {
+// 		return "", fmt.Errorf("error initializing app: %w", err)
+// 	}
+// 	client, err := app.Auth(ctx)
+// 	if err != nil {
+// 		return "", fmt.Errorf("error getting Auth client: %w", err)
+// 	}
+//
+// 	token, err := client.CustomToken(ctx, fmt.Sprintf("%d", uid))
+// 	if err != nil {
+// 		return "", fmt.Errorf("error minting custom token: %w", err)
+// 	}
+//
+// 	return token, err
+// }
 
 func (cl *Client) as(ctx *gin.Context) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	cu, err := cl.RequireAdmin(ctx)
 	if err != nil {
@@ -318,7 +317,7 @@ func (cl *Client) as(ctx *gin.Context) {
 		return
 	}
 
-	sn.Debugf("u: %#v", u)
+	sn.Debugf(ctx, "u: %#v", u)
 
 	cl.SetSessionToken(ctx, u, "")
 	if err := cl.SaveSession(ctx); err != nil {
@@ -327,17 +326,16 @@ func (cl *Client) as(ctx *gin.Context) {
 	}
 	msg := fmt.Sprintf("you are now operating as %q", u.Name)
 	ctx.JSON(http.StatusOK, gin.H{"CU": u, "Message": msg})
-	return
 }
 
-func (cl *Client) getUInfo(ctx *gin.Context, path string) (oaInfo, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+func (cl *Client) getUInfo(ctx *gin.Context, path string) (uInfo oaInfo, err error) {
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	// Handle the exchange code to initiate a transport.
 	retrievedState := cl.getSessionState(ctx)
 	if retrievedState != ctx.Query("state") {
-		return oaInfo{}, fmt.Errorf("Invalid session state: %s", retrievedState)
+		return oaInfo{}, fmt.Errorf("invalid session state: %s", retrievedState)
 	}
 
 	conf := cl.oauth2Config(path, scopes()...)
@@ -352,13 +350,17 @@ func (cl *Client) getUInfo(ctx *gin.Context, path string) (oaInfo, error) {
 		return oaInfo{}, err
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	defer func() {
+		if closeErr := resp.Body.Close(); err != nil {
+			err = closeErr
+		}
+	}()
+
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return oaInfo{}, err
 	}
 
-	uInfo := oaInfo{}
 	var b binding.BindingBody = binding.JSON
 	err = b.BindBody(body, &uInfo)
 	if err != nil {
@@ -372,8 +374,8 @@ func (cl *Client) getOAuth(ctx *gin.Context, id string) (*oauth, error) {
 }
 
 func (cl *Client) getOAuthByKey(ctx *gin.Context, k *datastore.Key) (*oauth, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	oauth, found := cl.getCachedOAuth(k)
 	if found {
@@ -390,11 +392,11 @@ func (cl *Client) getOAuthByKey(ctx *gin.Context, k *datastore.Key) (*oauth, err
 }
 
 func (cl *Client) getCachedOAuth(k *datastore.Key) (*oauth, bool) {
-	auth := newOAuth(k.Name)
 	if k == nil {
-		return auth, false
+		return nil, false
 	}
 
+	auth := newOAuth(k.Name)
 	data, found := cl.Cache.Get(k.Encode())
 	if !found {
 		return auth, false
@@ -415,13 +417,13 @@ func (cl *Client) cacheOAuth(auth *oauth) {
 }
 
 func (cl *Client) getByEmail(ctx *gin.Context, email string) (*sn.User, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	email = strings.ToLower(strings.TrimSpace(email))
 	q := datastore.NewQuery(uKind).
 		Ancestor(userRootKey()).
-		Filter("Email=", email).
+		FilterField("Email", "=", email).
 		KeysOnly()
 
 	ks, err := cl.DS.GetAll(ctx, q, nil)

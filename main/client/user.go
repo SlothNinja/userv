@@ -4,15 +4,12 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
-	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/datastore"
 	"github.com/SlothNinja/sn/v3"
-	"github.com/elliotchance/pie/v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,12 +37,8 @@ func newUser(uid sn.UID) *sn.User {
 }
 
 func (cl *Client) updateUser(ctx *gin.Context, cu, u1, u2 *sn.User) (*sn.User, bool, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	sn.Debugf("cu: %#v", cu)
-	sn.Debugf("u1: %#v", u1)
-	sn.Debugf("u2: %#v", u2)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	changed := false
 	// If admin or newly created user
@@ -114,7 +107,7 @@ func (cl *Client) updateUserName(ctx *gin.Context, u *sn.User, n string) (*sn.Us
 func (cl *Client) nameIsUnique(ctx *gin.Context, name string) (bool, error) {
 	LCName := strings.ToLower(name)
 
-	q := datastore.NewQuery("User").Filter("LCName=", LCName)
+	q := datastore.NewQuery("User").FilterField("LCName", "=", LCName)
 
 	cnt, err := cl.DS.Count(ctx, q)
 	if err != nil {
@@ -123,108 +116,14 @@ func (cl *Client) nameIsUnique(ctx *gin.Context, name string) (bool, error) {
 	return cnt == 0, nil
 }
 
-func getUID(ctx *gin.Context, param string) (sn.UID, error) {
-	id, err := strconv.ParseInt(ctx.Param(param), 10, 64)
-	return sn.UID(id), err
-}
-
-func (cl *Client) userJSONHandler(uidParam string) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		sn.Debugf(msgEnter)
-		defer sn.Debugf(msgExit)
-
-		cu, err := cl.RequireLogin(ctx)
-		if err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-
-		uid, err := getUID(ctx, uidParam)
-		if err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-
-		if cu.ID == uid {
-			ctx.JSON(http.StatusOK, gin.H{"User": cu})
-			return
-		}
-
-		u, err := cl.getUser(ctx, uid)
-		if err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-
-		ctx.JSON(http.StatusOK, gin.H{"User": u})
-	}
-}
-
-func (cl *Client) newUserHandler(ctx *gin.Context) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	cu, err := cl.RequireLogin(ctx)
-	if err != nil {
-		sn.JErr(ctx, err)
-		return
-	}
-
-	u, err := cl.getNewUser(ctx)
-	if err != nil {
-		sn.Errorf("%v", err.Error())
-		sn.JErr(ctx, err)
-		return
-	}
-
-	u.EmailReminders = true
-	u.EmailNotifications = true
-	u.GravType = "monsterid"
-	hash, err := emailHash(u.Email)
-	if err != nil {
-		sn.Warnf("email hash error: %v", err)
-		ctx.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-	u.EmailHash = hash
-
-	if !cu.Admin {
-		cu = u
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"CU":      cu,
-		"User":    u,
-		"Message": fmt.Sprintf("user created for %s", u.Name),
-	})
-}
-
-func (cl *Client) createUserHandler(ctx *gin.Context) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	cu, u, err := cl.createUser(ctx)
-	if err != nil {
-		sn.Errorf("%v", err.Error())
-		sn.JErr(ctx, fmt.Errorf("cannot create user: %w", err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"CU":      cu,
-		"User":    u,
-		"Message": "account created for " + u.Name,
-	})
-}
-
 // returns current user, created user, and error
 func (cl *Client) createUser(ctx *gin.Context) (*sn.User, *sn.User, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	cu, err := cl.RequireLogin(ctx)
 	if err == nil && cu.ID != 0 {
-		sn.Warnf("%s(%d) already has an account", cu.Name, cu.ID)
+		sn.Warnf(ctx, "%s(%d) already has an account", cu.Name, cu.ID)
 		return nil, nil, err
 	}
 
@@ -245,7 +144,7 @@ func (cl *Client) createUser(ctx *gin.Context) (*sn.User, *sn.User, error) {
 		return nil, nil, err
 	}
 
-	sn.Debugf("obj.User: %#v", obj.User)
+	sn.Debugf(ctx, "obj.User: %#v", obj.User)
 
 	u := newUser(0)
 	u, _, err = cl.updateUser(ctx, u, u, obj.User)
@@ -275,12 +174,10 @@ func (cl *Client) createUser(ctx *gin.Context) (*sn.User, *sn.User, error) {
 
 	_, err = cl.DS.RunInTransaction(ctx, func(tx *datastore.Transaction) error {
 		ks := []*datastore.Key{oa.Key, newUserKey(u.ID)}
-		es := []interface{}{oa, u}
+		es := []any{oa, u}
 		_, err := tx.PutMulti(ks, es)
 		return err
-
 	})
-
 	if err != nil {
 		return nil, nil, err
 	}
@@ -290,193 +187,6 @@ func (cl *Client) createUser(ctx *gin.Context) (*sn.User, *sn.User, error) {
 		return nil, nil, err
 	}
 	return u, u, nil
-
-}
-
-func (cl *Client) updateUserHandler(uidParam string) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		sn.Debugf(msgEnter)
-		defer sn.Debugf(msgExit)
-
-		cu, err := cl.RequireLogin(ctx)
-		if err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-
-		uid, err := getUID(ctx, uidParam)
-		if err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-
-		u := cu
-		if cu.ID != uid {
-			if _, err := cl.RequireAdmin(ctx); err != nil {
-				sn.JErr(ctx, err)
-				return
-			}
-
-			u, err = cl.getUser(ctx, uid)
-			if err != nil {
-				sn.JErr(ctx, err)
-				return
-			}
-		}
-
-		obj := new(struct {
-			User *sn.User
-		})
-		err = ctx.ShouldBind(obj)
-		if err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-
-		u, changed, err := cl.updateUser(ctx, cu, u, obj.User)
-		if err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-
-		if !changed {
-			ctx.JSON(http.StatusOK, gin.H{"Message": "no change to user"})
-			return
-		}
-
-		u.UpdatedAt = time.Now()
-		_, err = cl.DS.Put(ctx, newUserKey(u.ID), u)
-		if err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-
-		token := cl.GetSessionToken(ctx)
-		cl.SetSessionToken(ctx, u, token.Sub)
-
-		if err := cl.SaveSession(ctx); err != nil {
-			sn.JErr(ctx, err)
-			return
-		}
-		cl.Cache.SetDefault(newUserKey(u.ID).Encode(), u)
-
-		if cu.ID == u.ID {
-			ctx.JSON(http.StatusOK, gin.H{"CU": u, "Message": "user updated"})
-			return
-		}
-		ctx.JSON(http.StatusOK, gin.H{"Message": "user updated"})
-	}
-}
-
-func (cl *Client) getUser(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	return cl.get(ctx, uid)
-}
-
-func (cl *Client) get(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	u, err := cl.mcGet(uid)
-	if err == nil {
-		return u, nil
-	}
-
-	return cl.dsGet(ctx, uid)
-}
-
-func (cl *Client) mcGet(uid sn.UID) (*sn.User, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	if uid == 0 {
-		return nil, ErrMissingUID
-	}
-
-	item, found := cl.Cache.Get(newUserKey(uid).Encode())
-	if !found {
-		return nil, ErrUserNotFound
-	}
-
-	u, ok := item.(*sn.User)
-	if !ok {
-		return nil, ErrInvalidCache
-	}
-	return u, nil
-}
-
-func (cl *Client) mcGetMulti(uids []sn.UID) ([]*sn.User, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	l := len(uids)
-	if l == 0 {
-		return nil, ErrMissingUID
-	}
-
-	me := make(datastore.MultiError, l)
-	us := make([]*sn.User, l)
-	isNil := true
-	for i, k := range uids {
-		us[i], me[i] = cl.mcGet(k)
-		if me[i] != nil {
-			isNil = false
-		}
-	}
-
-	if isNil {
-		return us, nil
-	}
-	return us, me
-}
-
-func (cl *Client) dsGet(ctx *gin.Context, uid sn.UID) (*sn.User, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	if uid == 0 {
-		return nil, ErrMissingUID
-	}
-
-	u := new(sn.User)
-	err := cl.DS.Get(ctx, newUserKey(uid), u)
-	if err != nil {
-		sn.Warnf("%v", err.Error())
-		return nil, err
-	}
-	u.ID = uid
-	cl.cacheUser(u)
-	return u, nil
-}
-
-func (cl *Client) dsGetMulti(ctx *gin.Context, uids []sn.UID) ([]*sn.User, error) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	l := len(uids)
-	if l == 0 {
-		return nil, ErrMissingUID
-	}
-
-	us := make([]*sn.User, l)
-	ks := pie.Map(uids, func(uid sn.UID) *datastore.Key { return newUserKey(uid) })
-	err := cl.DS.GetMulti(ctx, ks, us)
-	if err != nil {
-		return us, err
-	}
-	for _, u := range us {
-		cl.cacheUser(u)
-	}
-	return us, nil
-}
-
-func (cl *Client) cacheUser(u *sn.User) {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
-
-	cl.Cache.SetDefault(newUserKey(u.ID).Encode(), u)
 }
 
 func emailHash(email string) (string, error) {

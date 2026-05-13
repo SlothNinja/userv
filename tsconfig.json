@@ -2,17 +2,20 @@
   "compilerOptions": {
     "target": "ESNext",
     "jsx": "preserve",
-    "lib": ["DOM", "ESNext"],
+    "lib": [
+      "DOM",
+      "ESNext"
+    ],
     "module": "preserve",
     "moduleResolution": "bundler",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     },
     "types": [
       "node",
       "vite/client",
-      "unplugin-vue-router/client"
     ],
     "noEmit": true,
     "strict": true,
@@ -31,7 +34,14 @@
   ],
   "exclude": [
     "dist",
-    "node_modules"
+    "node_modules",
+    "src/snvue/components/Chat/*",
+    "src/snvue/components/Game/*",
+    "src/snvue/composables/stack.ts"
   ],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
 }

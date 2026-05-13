@@ -10,8 +10,10 @@ import (
 	"github.com/SlothNinja/sn/v3"
 )
 
-const msgEnter = "Entering"
-const msgExit = "Exiting"
+const (
+	msgEnter = "Entering"
+	msgExit  = "Exiting"
+)
 
 // Client represents user service client
 type Client struct {
@@ -22,7 +24,7 @@ type Client struct {
 // New returns a user service client
 func New(ctx context.Context, opts ...sn.Option) *Client {
 	cl := &Client{Client: sn.NewClient(ctx, opts...)}
-	return cl.initUserDatastore(ctx).addRoutes()
+	return cl.initUserDatastore(ctx).addRoutes(ctx)
 }
 
 func (cl *Client) initUserDatastore(ctx context.Context) *Client {
@@ -34,10 +36,10 @@ func (cl *Client) initUserDatastore(ctx context.Context) *Client {
 	return cl
 }
 
-// AddRoutes addes routing for game.
-func (cl *Client) addRoutes() *Client {
-	sn.Debugf(msgEnter)
-	defer sn.Debugf(msgExit)
+// AddRoutes adds routing for game.
+func (cl *Client) addRoutes(ctx context.Context) *Client {
+	sn.Debugf(ctx, msgEnter)
+	defer sn.Debugf(ctx, msgExit)
 
 	// New
 	cl.Router.GET(cl.GetPrefix()+"/user/new", cl.newUserHandler)
